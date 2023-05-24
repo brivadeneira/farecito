@@ -1,0 +1,51 @@
+repos:
+    - repo: https://github.com/psf/black
+      rev: 19.10b0
+      hooks:
+        - id: black
+    - repo: https://github.com/pycqa/isort
+      rev: 5.11.2
+      hooks:
+        - id: isort
+          name: isort (python)
+    - repo: https://github.com/PyCQA/flake8
+      rev: 6.0.0
+      hooks:
+      -   id: flake8
+          additional_dependencies: [
+              'flake8-blind-except',
+              'flake8-docstrings',
+              'flake8-bugbear',
+              'flake8-comprehensions',
+              'flake8-docstrings',
+              'flake8-implicit-str-concat',
+              'pydocstyle>=5.0.0',
+          ]
+          exclude: ^tests/test_cases/no_closing_bracket\.py$
+    - repo: https://github.com/pre-commit/mirrors-mypy
+      rev: ''  # Use the sha / tag you want to point at
+      hooks:
+      -   id: mypy
+      - repo: https://github.com/pre-commit/pre-commit-hooks
+        rev: v2.5.0
+        hooks:
+          - id: check-added-large-files
+      - id: check-ast
+      - id: check-docstring-first
+      - id: detect-private-key
+      - id: double-quote-string-fixer
+      - id: name-tests-test
+      - repo: local
+        hooks:
+          - id: pylint
+            name: pylint
+            entry: poetry run pylint app/
+            language: system
+            always_run: true
+            pass_filenames: false
+          - id: create requirements
+            name: create requirements
+            entry: sh write_requirements.sh
+            language: system
+            always_run: true
+            pass_filenames: false
