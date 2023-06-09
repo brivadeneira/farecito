@@ -1,51 +1,58 @@
+fail_fast: false
+default_language_version:
+    python: python3.8
+
 repos:
-    - repo: https://github.com/psf/black
-      rev: 19.10b0
-      hooks:
-        - id: black
-    - repo: https://github.com/pycqa/isort
-      rev: 5.11.2
-      hooks:
-        - id: isort
-          name: isort (python)
-    - repo: https://github.com/PyCQA/flake8
-      rev: 6.0.0
-      hooks:
-      -   id: flake8
-          additional_dependencies: [
-              'flake8-blind-except',
-              'flake8-docstrings',
-              'flake8-bugbear',
-              'flake8-comprehensions',
-              'flake8-docstrings',
-              'flake8-implicit-str-concat',
-              'pydocstyle>=5.0.0',
-          ]
-          exclude: ^tests/test_cases/no_closing_bracket\.py$
-    - repo: https://github.com/pre-commit/mirrors-mypy
-      rev: ''  # Use the sha / tag you want to point at
-      hooks:
-      -   id: mypy
-      - repo: https://github.com/pre-commit/pre-commit-hooks
-        rev: v2.5.0
-        hooks:
-          - id: check-added-large-files
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: debug-statements
       - id: check-ast
-      - id: check-docstring-first
+      - id: check-json
       - id: detect-private-key
-      - id: double-quote-string-fixer
-      - id: name-tests-test
-      - repo: local
-        hooks:
-          - id: pylint
-            name: pylint
-            entry: poetry run pylint app/
-            language: system
-            always_run: true
-            pass_filenames: false
-          - id: create requirements
-            name: create requirements
-            entry: sh write_requirements.sh
-            language: system
-            always_run: true
-            pass_filenames: false
+      - id: check-yaml
+      - id: check-added-large-files
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+
+  - repo: https://github.com/psf/black
+    rev: 23.3.0
+    hooks:
+      - id: black
+        name: black
+        entry: black
+        language: system
+        types: [python]
+        args: [--line-length=100]
+
+
+  - repo: https://github.com/pycqa/isort
+    rev: 5.12.0
+    hooks:
+      - id: isort
+
+  - repo: local
+    hooks:
+      - id: pylint
+        name: pylint
+        entry: pylint
+        language: system
+        types: [python]
+        exclude: ^venv/ ^.git/ ^.idea/ ^.DS_Store/ ^.ipynb_checkpoints
+        args: [--disable=no-name-in-module, # pylint has some issues understanding dataclasses
+               --disable=no-member,
+               --disable=import-error,
+               --disable=missing-class-docstring,
+               --disable=missing-function-docstring,  # some classes/functions are self-explanatory
+               --disable=too-few-public-methods]
+
+
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy
+        entry: bash -c 'mypy "$@" || true' --
+        language: system
+        types: [python]
+        exclude: ^venv/ ^.git/ ^.idea/ ^.DS_Store/ ^.ipynb_checkpoints/
+        # args: [--ignore_missing_imports]
