@@ -1,6 +1,6 @@
 fail_fast: false
 default_language_version:
-    python: python3.8
+    python: python3.10
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -25,11 +25,11 @@ repos:
         types: [python]
         args: [--line-length=100]
 
-
   - repo: https://github.com/pycqa/isort
     rev: 5.12.0
     hooks:
       - id: isort
+        args: [ --line-length=100 ]
 
   - repo: local
     hooks:
@@ -39,13 +39,19 @@ repos:
         language: system
         types: [python]
         exclude: ^venv/ ^.git/ ^.idea/ ^.DS_Store/ ^.ipynb_checkpoints
-        args: [--disable=no-name-in-module, # pylint has some issues understanding dataclasses
+        args: [--max-line-length=100,
+               --disable=no-name-in-module, # pylint has some issues understanding dataclasses
                --disable=no-member,
                --disable=import-error,
                --disable=missing-class-docstring,
                --disable=missing-function-docstring,  # some classes/functions are self-explanatory
-               --disable=too-few-public-methods]
+               --disable=too-few-public-methods,
+               --disable=syntax-error]  # E0001: Parsing failed: 'invalid syntax ...'
 
+  - repo: https://github.com/PyCQA/autoflake
+    rev: v2.1.1
+    hooks:
+    -   id: autoflake
 
   - repo: local
     hooks:
@@ -55,4 +61,3 @@ repos:
         language: system
         types: [python]
         exclude: ^venv/ ^.git/ ^.idea/ ^.DS_Store/ ^.ipynb_checkpoints/
-        # args: [--ignore_missing_imports]
