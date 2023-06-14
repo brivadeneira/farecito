@@ -129,13 +129,13 @@ class Neo4JConn:
     uri: StrictStr
     user_name: StrictStr
     password: StrictStr
-    db_name: StrictStr
+    db_name: StrictStr = "neo4j"
     auth: tuple[str, str] = None
-    async_driver: AsyncDriverType = None
+    _async_driver: AsyncDriverType = None
 
     def init_driver(self):
         try:
-            self.async_driver = AsyncGraphDatabase.driver(
+            self._async_driver = AsyncGraphDatabase.driver(
                 self.uri, auth=self.auth, database=self.db_name
             )
         except DriverError as ex:
@@ -143,26 +143,27 @@ class Neo4JConn:
 
     def __post_init__(self):
         if not isinstance(self.uri, str):
+            #  for some reason pydantic is not validating this
             raise ValidationError()
+
         self.auth = self.user_name, self.password
 
-        if not self.async_driver:
+        if not self._async_driver:
             self.init_driver()
 
-    async def close_driver(self):
-        await self.async_driver.close()
+    async def _close_driver(self):
+        await self._async_driver.close()
 
-    async def run_query(self, query):
+    async def execute_query(self, query: str, sleep_time: int = SLEEP_TIME):
         """
         Execute an async given neo4j_graph query
         :param query: (str) a valid neo4j_graph query to be executed
+        :param sleep_time: (int) time to sleep in case of reconnecting driver, if not given SLEEP_TIME
         :return: (any) the data in the result of the query.
         """
         trace_uuid = str(uuid.uuid4())
-
         try:
-            async with self.async_driver.session() as session:
-                print(query)
+            async with self._async_driver.session() as session:
                 result = await session.run(query)
                 data = await result.data()
                 if data:
@@ -171,6 +172,6 @@ class Neo4JConn:
         except (AuthError, Forbidden, DatabaseError, DriverError) as ex:
             logging.error(f"[{trace_uuid}] A node4j exception appeared: {ex}")
             await self.close_driver()
-            await asyncio.sleep(SLEEP_TIME)
+            await asyncio.sleep(sleep_time)
             self.init_driver()
             await self.run_query(query)

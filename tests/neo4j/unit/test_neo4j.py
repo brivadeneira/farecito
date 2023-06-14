@@ -7,7 +7,7 @@ import pytest
 from pydantic import ValidationError
 
 from neo4j_graph import CompanyInfo, Location, Neo4JConn, Neo4JNode
-from tests.neo4j import CompanyInfoFactory, LocationFactory, Neo4jConnFactory, Neo4JNodeFactory
+from tests.neo4j import CompanyInfoFactory, LocationFactory, Neo4JConnFactory, Neo4JNodeFactory
 
 
 class LocationTestCase(unittest.TestCase):
@@ -125,7 +125,7 @@ class TestNeo4JNode(unittest.TestCase):
 
 class TestNeo4JConn(unittest.TestCase):
     def test_neo4j_conn(self):
-        neo4j_conn = Neo4jConnFactory()
+        neo4j_conn = Neo4JConnFactory()
         self.assertIsInstance(neo4j_conn, Neo4JConn)
         self.assertIsInstance(neo4j_conn.uri, str)
         self.assertIsInstance(neo4j_conn.user_name, str)
@@ -134,15 +134,15 @@ class TestNeo4JConn(unittest.TestCase):
 
     def test_invalid_user_name_type(self):
         with self.assertRaises(ValidationError):
-            Neo4jConnFactory(user_name=3.14)
+            Neo4JConnFactory(user_name=3.14)
 
     def test_invalid_password_type(self):
         with self.assertRaises(ValidationError):
-            Neo4jConnFactory(password=3.141)
+            Neo4JConnFactory(password=3.141)
 
     def test_invalid_db_name_type(self):
         with self.assertRaises(ValidationError):
-            Neo4jConnFactory(db_name=3.1416)
+            Neo4JConnFactory(db_name=3.1416)
 
 
 if __name__ == "__main__":

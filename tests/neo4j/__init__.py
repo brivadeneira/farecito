@@ -10,7 +10,7 @@ Classes:
 - CompanyInfoFactory: Factory for generating fake CompanyInfo instances.
 - LocationFactory: Factory for generating fake Location instances.
 - Neo4JNodeFactory: Factory for generating fake Neo4JNode instances.
-- Neo4jConnFactory: Factory for generating fake Neo4JConn instances.
+- Neo4JConnFactory: Factory for generating fake Neo4JConn instances.
 
 Note: The factories rely on the 'factory' library
 and the 'Faker' class from the 'factory.Faker' module.
@@ -53,7 +53,7 @@ class Neo4JNodeFactory(Factory):
     reachable_ids = List([1, 2, 3])
 
 
-class Neo4jConnFactory(Factory):
+class Neo4JConnFactory(Factory):
     class Meta:
         model = Neo4JConn
 

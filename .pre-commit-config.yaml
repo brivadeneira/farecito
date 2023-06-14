@@ -46,12 +46,21 @@ repos:
                --disable=missing-class-docstring,
                --disable=missing-function-docstring,  # some classes/functions are self-explanatory
                --disable=too-few-public-methods,
-               --disable=syntax-error]  # E0001: Parsing failed: 'invalid syntax ...'
+               --disable=syntax-error,  # E0001: Parsing failed: 'invalid syntax ...'
+               --disable=fixme,  # W0511
+               --disable=unused-private-member,  # W0238: Test classes
+               --disable=attribute-defined-outside-init]  # idem below
 
   - repo: https://github.com/PyCQA/autoflake
     rev: v2.1.1
     hooks:
     -   id: autoflake
+
+  - repo: https://github.com/dhruvmanila/remove-print-statements
+    rev: v0.5.1
+    hooks:
+    - id: remove-print-statements
+      args: ['--verbose']   # Show all the print statements to be removed
 
   - repo: local
     hooks:
