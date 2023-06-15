@@ -35,7 +35,7 @@ class CompanyInfoFactory(Factory):
     class Meta:
         model = CompanyInfo
 
-    company_name = Faker("company")
+    reachable_ids = List([1, 2, 3])
     id_from_company = LazyAttribute(lambda _: random.randint(0, 100))
     uuid_from_company = Faker("uuid4")
 
@@ -48,7 +48,7 @@ class Neo4JNodeFactory(Factory):
     region = Faker("city")
     location = SubFactory(LocationFactory)
     node_type = "city"
-    company_info = CompanyInfoFactory()
+    companies_info = List([SubFactory(CompanyInfoFactory)])
     is_popular = False
     reachable_ids = List([1, 2, 3])
 

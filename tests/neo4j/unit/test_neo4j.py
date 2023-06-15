@@ -56,6 +56,9 @@ class TestCompanyInfo(unittest.TestCase):
         self.assertIsInstance(company_info, CompanyInfo)
 
         self.assertIsInstance(company_info.company_name, str)
+        self.assertIsInstance(company_info.reachable_id_name, str)
+        self.assertIsInstance(company_info.reachable_ids, list)
+        self.assertIsInstance(company_info.reachable_ids[0], int)
         self.assertIsInstance(company_info.id_from_company, (type(None), int))
         self.assertIsInstance(company_info.uuid_from_company, (type(None), str))
 
@@ -63,9 +66,11 @@ class TestCompanyInfo(unittest.TestCase):
         company_info = CompanyInfoFactory()
 
         cypher_repr = (
-            f'{{ company_name: "{company_info.company_name}", '
+            f'company_name: "{company_info.company_name}", '
+            f"reachable_ids: {company_info.reachable_ids}, "
+            f'reachable_id_name: "{company_info.reachable_id_name}", '
             f"id_from_company: {company_info.id_from_company}, "
-            f'uuid_from_company: "{company_info.uuid_from_company}" }}'
+            f'uuid_from_company: "{company_info.uuid_from_company}"'
         )
 
         assert pytest.approx(str(company_info)) == cypher_repr
@@ -92,21 +97,18 @@ class TestNeo4JNode(unittest.TestCase):
         self.assertIsInstance(node.region, str)
         self.assertIsInstance(node.location, Location)
         self.assertIsInstance(node.node_type, str)
-        self.assertIsInstance(node.company_info, CompanyInfo)
-        self.assertIsInstance(node.company_info.company_name, str)
-        self.assertIsInstance(node.company_info.id_from_company, (type(None), int))
-        self.assertIsInstance(node.company_info.uuid_from_company, (type(None), str))
-        self.assertIsInstance(node.reachable_ids, (type(None), list))
+        self.assertIsInstance(node.companies_info, list)
+        self.assertIsInstance(node.companies_info[0], CompanyInfo)
         self.assertIsInstance(node.is_popular, bool)
 
     def test_valid_cypher_repr(self):
         node = Neo4JNodeFactory()
 
         cypher_node_repr = (
-            f'{{ name: "{node.name}", region: "{node.region}", {str(node.location)}, '
-            f"company_info: {str(node.company_info)}, "
-            f'node_type: "{node.node_type}", is_popular: {node.is_popular}, '
-            f"reachable_ids: {node.reachable_ids} }}"
+            f'name: "{node.name}", region: "{node.region}", {str(node.location)}, '
+            f"companies_info: "
+            f'[{", ".join([str(company_info) for company_info in node.companies_info])}], '
+            f'node_type: "{node.node_type}", is_popular: {node.is_popular}'
         )
         assert pytest.approx(str(node)) == pytest.approx(cypher_node_repr)
 

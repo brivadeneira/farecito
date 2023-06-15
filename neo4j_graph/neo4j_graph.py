@@ -12,7 +12,7 @@ import asyncio
 import logging
 import uuid
 from dataclasses import is_dataclass
-from typing import TypeVar
+from typing import Iterable, TypeVar
 
 from neo4j import AsyncGraphDatabase
 from neo4j.exceptions import AuthError, DatabaseError, DriverError, Forbidden
@@ -69,20 +69,26 @@ class Neo4jBase:
                  year: 3000, service: "Planet express"'
         """
         items_as_str = []
-
         for field_name, field_def in self.__dataclass_fields__.items():
             field_value = getattr(self, field_name)
-            if is_dataclass(field_value):
+            is_an_iterable_of_objects = isinstance(field_value, Iterable) and any(
+                [is_dataclass(_obj) for _obj in field_value]
+            )
+            if is_an_iterable_of_objects:
+                # it will be always an array in cypher
+                items_as_str.append(
+                    f'{field_name}: [{", ".join([str(_obj) for _obj in field_value])}]'
+                )
+            elif is_dataclass(field_value):
                 if field_def.type == Location.__name__:  # should be isinstance(field, Location)
                     items_as_str.append(str(field_value))
                 else:
-                    items_as_str.append(f"{field_name}: {str(field_value)}")
+                    items_as_str.append(f"{{ {field_name}: {str(field_value)} }}")
             elif isinstance(field_value, str):
                 items_as_str.append(f'{field_name}: "{field_value}"')
             else:
                 items_as_str.append(f"{field_name}: {field_value}")
-
-        return f'{{ {", ".join(items_as_str)} }}'
+        return f'{", ".join(items_as_str)}'
 
 
 @dataclass
@@ -92,6 +98,8 @@ class CompanyInfo(Neo4jBase):
     """
 
     company_name: StrictStr = "flixbus"
+    reachable_ids: list[int] | None = None
+    reachable_id_name: str = "flixbus_id"
     # reachable_ids will be looked according to this attr
     # e.g. for "flixbus", "flixbus_id"
     id_from_company: int | None = None
@@ -107,10 +115,9 @@ class Neo4JNode(Neo4jBase):
     name: StrictStr
     region: StrictStr
     location: Location
-    company_info: CompanyInfo
+    companies_info: list[CompanyInfo]
     node_type: StrictStr = "city"
     is_popular: bool = False
-    reachable_ids: list[int] | None = None
     # the node must have a list of reachable_ids according to company_info.name
     # e.g. for "flixbus", "flixbus_id"
 
