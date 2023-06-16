@@ -17,6 +17,11 @@ class LocationTestCase(unittest.TestCase):
     including type attr validation and cypher repr
     """
 
+    @pytest.fixture(autouse=True)
+    def __inject_fixtures(self, dummy_location, cypher_for_dummy_location):
+        self.dummy_location = dummy_location
+        self.cypher_for_dummy_location = cypher_for_dummy_location
+
     def test_valid_location(self):
         location = LocationFactory()
         self.assertIsInstance(location.latitude, float)
@@ -25,13 +30,10 @@ class LocationTestCase(unittest.TestCase):
         self.assertTrue(-180 <= location.longitude <= 180)
 
     def test_valid_cypher_repr(self):
-        location = LocationFactory()
-        cypher_point_repr = (
-            f"location: point({{ longitude: {location.longitude}, "
-            f"latitude: {location.longitude} }})"
-        )
+        location = self.dummy_location
+        cypher_point_repr = self.cypher_for_dummy_location
 
-        assert pytest.approx(str(location)) == cypher_point_repr
+        assert pytest.approx(str(location)) == pytest.approx(cypher_point_repr)
 
     def test_invalid_latitude(self):
         with self.assertRaises(ValueError):
@@ -51,6 +53,11 @@ class LocationTestCase(unittest.TestCase):
 
 
 class TestCompanyInfo(unittest.TestCase):
+    @pytest.fixture(autouse=True)
+    def __inject_fixtures(self, dummy_company_info, cypher_for_dummy_company_info):
+        self.dummy_company_info = dummy_company_info
+        self.cypher_for_dummy_company_info = cypher_for_dummy_company_info
+
     def test_company_info(self):
         company_info = CompanyInfoFactory()
         self.assertIsInstance(company_info, CompanyInfo)
@@ -63,17 +70,10 @@ class TestCompanyInfo(unittest.TestCase):
         self.assertIsInstance(company_info.uuid_from_company, (type(None), str))
 
     def test_valid_cypher_repr(self):
-        company_info = CompanyInfoFactory()
+        company_info = self.dummy_company_info
+        cypher_company_info_repr = self.cypher_for_dummy_company_info
 
-        cypher_repr = (
-            f'company_name: "{company_info.company_name}", '
-            f"reachable_ids: {company_info.reachable_ids}, "
-            f'reachable_id_name: "{company_info.reachable_id_name}", '
-            f"id_from_company: {company_info.id_from_company}, "
-            f'uuid_from_company: "{company_info.uuid_from_company}"'
-        )
-
-        assert pytest.approx(str(company_info)) == cypher_repr
+        assert pytest.approx(str(company_info)) == pytest.approx(cypher_company_info_repr)
 
     def test_invalid_company_name_type(self):
         with self.assertRaises(ValidationError):
@@ -89,6 +89,14 @@ class TestCompanyInfo(unittest.TestCase):
 
 
 class TestNeo4JNode(unittest.TestCase):
+    @pytest.fixture(autouse=True)
+    def __inject_fixtures(
+        self, dummy_node, cypher_for_dummy_location, cypher_for_dummy_company_info
+    ):
+        self.dummy_node = dummy_node
+        self.cypher_for_dummy_location = cypher_for_dummy_location
+        self.cypher_for_dummy_company_info = cypher_for_dummy_company_info
+
     def test_neo4j_node(self):
         node = Neo4JNodeFactory()
         self.assertIsInstance(node, Neo4JNode)
@@ -102,13 +110,13 @@ class TestNeo4JNode(unittest.TestCase):
         self.assertIsInstance(node.is_popular, bool)
 
     def test_valid_cypher_repr(self):
-        node = Neo4JNodeFactory()
+        node = self.dummy_node
 
         cypher_node_repr = (
-            f'name: "{node.name}", region: "{node.region}", {str(node.location)}, '
-            f"companies_info: "
-            f'[{", ".join([str(company_info) for company_info in node.companies_info])}], '
-            f'node_type: "{node.node_type}", is_popular: {node.is_popular}'
+            f'name: "name", region: "region", '
+            f"{self.cypher_for_dummy_location}, "
+            f"companies_info: [{self.cypher_for_dummy_company_info}], "
+            f'node_type: "node_type", is_popular: False'
         )
         assert pytest.approx(str(node)) == pytest.approx(cypher_node_repr)
 

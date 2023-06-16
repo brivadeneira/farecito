@@ -14,6 +14,8 @@ repos:
       - id: check-added-large-files
       - id: end-of-file-fixer
       - id: trailing-whitespace
+      # - id: double-quote-string-fixer
+
 
   - repo: https://github.com/psf/black
     rev: 23.3.0
@@ -49,7 +51,9 @@ repos:
                --disable=syntax-error,  # E0001: Parsing failed: 'invalid syntax ...'
                --disable=fixme,  # W0511
                --disable=unused-private-member,  # W0238: Test classes
-               --disable=attribute-defined-outside-init]  # idem below
+               --disable=attribute-defined-outside-init,  # idem below
+               --disable=redefined-outer-name,  # W0621: test fixtures are injecting from out of the scope
+          ]
 
   - repo: https://github.com/PyCQA/autoflake
     rev: v2.1.1
@@ -57,7 +61,7 @@ repos:
     -   id: autoflake
 
   - repo: https://github.com/dhruvmanila/remove-print-statements
-    rev: v0.5.1
+    rev: v0.5.2
     hooks:
     - id: remove-print-statements
       args: ['--verbose']   # Show all the print statements to be removed

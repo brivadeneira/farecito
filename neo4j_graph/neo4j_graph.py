@@ -138,11 +138,11 @@ class Neo4JConn:
     password: StrictStr
     db_name: StrictStr = "neo4j"
     auth: tuple[str, str] = None
-    _async_driver: AsyncDriverType = None
+    async_driver: AsyncDriverType = None
 
     def init_driver(self):
         try:
-            self._async_driver = AsyncGraphDatabase.driver(
+            self.async_driver = AsyncGraphDatabase.driver(
                 self.uri, auth=self.auth, database=self.db_name
             )
         except DriverError as ex:
@@ -155,11 +155,11 @@ class Neo4JConn:
 
         self.auth = self.user_name, self.password
 
-        if not self._async_driver:
+        if not self.async_driver:
             self.init_driver()
 
     async def _close_driver(self):
-        await self._async_driver.close()
+        await self.async_driver.close()
 
     async def execute_query(self, query: str, sleep_time: int = SLEEP_TIME):
         """
@@ -170,7 +170,7 @@ class Neo4JConn:
         """
         trace_uuid = str(uuid.uuid4())
         try:
-            async with self._async_driver.session() as session:
+            async with self.async_driver.session() as session:
                 result = await session.run(query)
                 data = await result.data()
                 if data:
