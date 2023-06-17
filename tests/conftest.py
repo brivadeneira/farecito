@@ -15,9 +15,8 @@ Factories:
 """
 
 import pytest
-from factory import List
 
-from tests.neo4j import CompanyInfoFactory, LocationFactory, Neo4JNodeFactory
+from tests.neo4j import BusStationNodeFactory, LocationFactory
 
 
 @pytest.fixture
@@ -27,37 +26,17 @@ def dummy_location():
 
 @pytest.fixture
 def cypher_for_dummy_location():
-    return "location: point({{ longitude: 0.0, latitude: 0.0 }})"
+    return "location: point({ longitude: 0.0, latitude: 0.0 })"
 
 
 @pytest.fixture
-def dummy_company_info():
-    return CompanyInfoFactory(
-        company_name="company_name",
-        reachable_ids=List([1, 2, 3]),
-        reachable_id_name="reachable_id_name",
-        id_from_company=1,
-        uuid_from_company="uuid_from_company",
-    )
-
-
-@pytest.fixture
-def cypher_for_dummy_company_info():
-    return (
-        'company_name: "company_name", '
-        "reachable_ids: [1, 2, 3], "
-        'reachable_id_name: "reachable_id_name", '
-        "id_from_company: 1, "
-        'uuid_from_company: "uuid_from_company"'
-    )
-
-
-@pytest.fixture
-def dummy_node(dummy_location, dummy_company_info):
-    return Neo4JNodeFactory(
-        name="name",
-        node_type="node_type",
-        region="region",
+def dummy_node(dummy_location):
+    return BusStationNodeFactory(
+        station_id=123,
+        city="Dummy City",
+        region="Dummy Region",
         location=dummy_location,
-        companies_info=List([dummy_company_info]),
+        id_for_reach=456,
+        service_reachable_ids=[789, 101112],
+        uuid_from_service="dummy-uuid",
     )

@@ -12,7 +12,7 @@ import asyncio
 import logging
 import uuid
 from dataclasses import is_dataclass
-from typing import Iterable, TypeVar
+from typing import TypeVar
 
 from neo4j import AsyncGraphDatabase
 from neo4j.exceptions import AuthError, DatabaseError, DriverError, Forbidden
@@ -71,15 +71,7 @@ class Neo4jBase:
         items_as_str = []
         for field_name, field_def in self.__dataclass_fields__.items():
             field_value = getattr(self, field_name)
-            is_an_iterable_of_objects = isinstance(field_value, Iterable) and any(
-                [is_dataclass(_obj) for _obj in field_value]
-            )
-            if is_an_iterable_of_objects:
-                # it will be always an array in cypher
-                items_as_str.append(
-                    f'{field_name}: [{", ".join([str(_obj) for _obj in field_value])}]'
-                )
-            elif is_dataclass(field_value):
+            if is_dataclass(field_value):
                 if field_def.type == Location.__name__:  # should be isinstance(field, Location)
                     items_as_str.append(str(field_value))
                 else:
@@ -92,34 +84,22 @@ class Neo4jBase:
 
 
 @dataclass
-class CompanyInfo(Neo4jBase):
+class BusStationNode(Neo4jBase):
     """
-    Contains information about company/service of a city node
-    """
-
-    company_name: StrictStr = "flixbus"
-    reachable_ids: list[int] | None = None
-    reachable_id_name: str = "flixbus_id"
-    # reachable_ids will be looked according to this attr
-    # e.g. for "flixbus", "flixbus_id"
-    id_from_company: int | None = None
-    uuid_from_company: StrictStr | None = None
-
-
-@dataclass
-class Neo4JNode(Neo4jBase):
-    """
-    A Neo4j node - like class based on Neo4jBase
+    A Neo4j node model for bus stations,
+    like class based on Neo4jBase
     """
 
-    name: StrictStr
+    station_id: int
+    city: StrictStr
     region: StrictStr
     location: Location
-    companies_info: list[CompanyInfo]
-    node_type: StrictStr = "city"
+    id_for_reach: int
+    node_type: StrictStr = "bus_station"
+    service: StrictStr = "flixbus"
+    service_reachable_ids: list[int] | None = None
+    uuid_from_service: StrictStr | None = None
     is_popular: bool = False
-    # the node must have a list of reachable_ids according to company_info.name
-    # e.g. for "flixbus", "flixbus_id"
 
 
 AsyncDriverType = TypeVar("neo4j.AsyncDriver")

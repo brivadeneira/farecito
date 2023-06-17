@@ -20,7 +20,7 @@ import random
 
 from factory import Factory, Faker, LazyAttribute, List, SubFactory
 
-from neo4j_graph import CompanyInfo, Location, Neo4JConn, Neo4JNode
+from neo4j_graph import BusStationNode, Location, Neo4JConn
 
 
 class LocationFactory(Factory):
@@ -31,26 +31,20 @@ class LocationFactory(Factory):
     longitude = LazyAttribute(lambda _: random.uniform(-180, 180))
 
 
-class CompanyInfoFactory(Factory):
+class BusStationNodeFactory(Factory):
     class Meta:
-        model = CompanyInfo
+        model = BusStationNode
 
-    reachable_ids = List([1, 2, 3])
-    id_from_company = LazyAttribute(lambda _: random.randint(0, 100))
-    uuid_from_company = Faker("uuid4")
-
-
-class Neo4JNodeFactory(Factory):
-    class Meta:
-        model = Neo4JNode
-
-    name = Faker("city")
-    region = Faker("city")
+    node_type = "bus_station"
+    station_id = LazyAttribute(lambda _: random.randint(0, 100))
+    city = Faker("city")
+    region = Faker("country")
     location = SubFactory(LocationFactory)
-    node_type = "city"
-    companies_info = List([SubFactory(CompanyInfoFactory)])
+    service = "flixbus"
+    service_reachable_ids = List([1, 2, 3])
+    id_for_reach = LazyAttribute(lambda _: random.randint(0, 100))
+    uuid_from_service = Faker("uuid4")
     is_popular = False
-    reachable_ids = List([1, 2, 3])
 
 
 class Neo4JConnFactory(Factory):

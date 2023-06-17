@@ -6,8 +6,8 @@ import unittest
 import pytest
 from pydantic import ValidationError
 
-from neo4j_graph import CompanyInfo, Location, Neo4JConn, Neo4JNode
-from tests.neo4j import CompanyInfoFactory, LocationFactory, Neo4JConnFactory, Neo4JNodeFactory
+from neo4j_graph import BusStationNode, Location, Neo4JConn
+from tests.neo4j import BusStationNodeFactory, LocationFactory, Neo4JConnFactory
 
 
 class LocationTestCase(unittest.TestCase):
@@ -32,7 +32,6 @@ class LocationTestCase(unittest.TestCase):
     def test_valid_cypher_repr(self):
         location = self.dummy_location
         cypher_point_repr = self.cypher_for_dummy_location
-
         assert pytest.approx(str(location)) == pytest.approx(cypher_point_repr)
 
     def test_invalid_latitude(self):
@@ -52,85 +51,58 @@ class LocationTestCase(unittest.TestCase):
             LocationFactory(longitude="180")
 
 
-class TestCompanyInfo(unittest.TestCase):
+class TestBusStationNode(unittest.TestCase):
     @pytest.fixture(autouse=True)
-    def __inject_fixtures(self, dummy_company_info, cypher_for_dummy_company_info):
-        self.dummy_company_info = dummy_company_info
-        self.cypher_for_dummy_company_info = cypher_for_dummy_company_info
-
-    def test_company_info(self):
-        company_info = CompanyInfoFactory()
-        self.assertIsInstance(company_info, CompanyInfo)
-
-        self.assertIsInstance(company_info.company_name, str)
-        self.assertIsInstance(company_info.reachable_id_name, str)
-        self.assertIsInstance(company_info.reachable_ids, list)
-        self.assertIsInstance(company_info.reachable_ids[0], int)
-        self.assertIsInstance(company_info.id_from_company, (type(None), int))
-        self.assertIsInstance(company_info.uuid_from_company, (type(None), str))
-
-    def test_valid_cypher_repr(self):
-        company_info = self.dummy_company_info
-        cypher_company_info_repr = self.cypher_for_dummy_company_info
-
-        assert pytest.approx(str(company_info)) == pytest.approx(cypher_company_info_repr)
-
-    def test_invalid_company_name_type(self):
-        with self.assertRaises(ValidationError):
-            CompanyInfo(company_name=3.14)
-
-    def test_invalid_id_from_company(self):
-        with self.assertRaises(ValidationError):
-            CompanyInfo(id_from_company="3.141")
-
-    def test_invalid_uuid_from_company(self):
-        with self.assertRaises(ValidationError):
-            CompanyInfo(uuid_from_company=3.14159)
-
-
-class TestNeo4JNode(unittest.TestCase):
-    @pytest.fixture(autouse=True)
-    def __inject_fixtures(
-        self, dummy_node, cypher_for_dummy_location, cypher_for_dummy_company_info
-    ):
+    def __inject_fixtures(self, dummy_node, cypher_for_dummy_location):
         self.dummy_node = dummy_node
         self.cypher_for_dummy_location = cypher_for_dummy_location
-        self.cypher_for_dummy_company_info = cypher_for_dummy_company_info
 
     def test_neo4j_node(self):
-        node = Neo4JNodeFactory()
-        self.assertIsInstance(node, Neo4JNode)
+        node = BusStationNodeFactory()
+        self.assertIsInstance(node, BusStationNode)
 
-        self.assertIsInstance(node.name, str)
+        self.assertIsInstance(node.city, str)
         self.assertIsInstance(node.region, str)
         self.assertIsInstance(node.location, Location)
         self.assertIsInstance(node.node_type, str)
-        self.assertIsInstance(node.companies_info, list)
-        self.assertIsInstance(node.companies_info[0], CompanyInfo)
         self.assertIsInstance(node.is_popular, bool)
+
+        self.assertIsInstance(node.station_id, int)
+        self.assertIsInstance(node.id_for_reach, int)
+        self.assertIsInstance(node.service, str)
+        self.assertIsInstance(node.service_reachable_ids, (list, type(None)))
+        if node.service_reachable_ids is not None:
+            self.assertTrue(all(isinstance(i, int) for i in node.service_reachable_ids))
+        self.assertIsInstance(node.uuid_from_service, (str, type(None)))
 
     def test_valid_cypher_repr(self):
         node = self.dummy_node
-
+        cypher_for_dummy_location = self.cypher_for_dummy_location
         cypher_node_repr = (
-            f'name: "name", region: "region", '
-            f"{self.cypher_for_dummy_location}, "
-            f"companies_info: [{self.cypher_for_dummy_company_info}], "
-            f'node_type: "node_type", is_popular: False'
+            f"station_id: 123, "
+            f'city: "Dummy City", '
+            f'region: "Dummy Region", '
+            f"{cypher_for_dummy_location}, "
+            f"id_for_reach: 456, "
+            f'node_type: "bus_station", '
+            f'service: "flixbus", '
+            f"service_reachable_ids: [789, 101112], "
+            f'uuid_from_service: "dummy-uuid", '
+            f"is_popular: False"
         )
         assert pytest.approx(str(node)) == pytest.approx(cypher_node_repr)
 
     def test_invalid_name_type(self):
         with self.assertRaises(ValidationError):
-            Neo4JNodeFactory(name=3.14)
+            BusStationNodeFactory(city=3.14)
 
     def test_invalid_region_type(self):
         with self.assertRaises(ValidationError):
-            Neo4JNodeFactory(region=3.141)
+            BusStationNodeFactory(region=3.141)
 
     def test_invalid_node_type_type(self):
         with self.assertRaises(ValidationError):
-            Neo4JNodeFactory(node_type=3.14159)
+            BusStationNodeFactory(node_type=3.14159)
 
 
 class TestNeo4JConn(unittest.TestCase):
