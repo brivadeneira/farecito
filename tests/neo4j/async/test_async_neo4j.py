@@ -55,7 +55,7 @@ class Neo4jConnTests(IsolatedAsyncioTestCase):
         session_mock.__aenter__.assert_awaited_once()
 
         session_mock.__aexit__.assert_awaited_once()
-        # TODO
+        # TODO add calls mock assertions
         # session_mock calls are:
         # [call.run('fake_query'),
         #  call.run().data(),
@@ -67,8 +67,7 @@ class Neo4jConnTests(IsolatedAsyncioTestCase):
         # assert res is session_executor_mock.return_value
 
 
-# TODO
-# add more tests
+# TODO add more tests
 
 
 if __name__ == "__main__":

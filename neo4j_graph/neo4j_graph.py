@@ -9,16 +9,18 @@ Classes:
 from __future__ import annotations
 
 import asyncio
+import datetime
 import logging
 import uuid
 from dataclasses import is_dataclass
-from typing import TypeVar
+from typing import List, TypeVar
 
 from neo4j import AsyncGraphDatabase
 from neo4j.exceptions import AuthError, DatabaseError, DriverError, Forbidden
 from pydantic import StrictStr, ValidationError
 from pydantic.dataclasses import dataclass
 
+from neo4j_graph.utils import object_to_cypher_repr
 from settings import APP_NAME, SLEEP_TIME
 
 logger = logging.getLogger(APP_NAME)
@@ -42,7 +44,7 @@ class Location:
             raise ValueError("longitude must be between -180 and 180")
 
     def __str__(self):
-        return f"location: point({{ longitude: {self.longitude}, latitude: {self.longitude} }})"
+        return f"point({{ longitude: {self.longitude}, latitude: {self.longitude} }})"
 
 
 @dataclass
@@ -72,14 +74,9 @@ class Neo4jBase:
         for field_name, field_def in self.__dataclass_fields__.items():
             field_value = getattr(self, field_name)
             if is_dataclass(field_value):
-                if field_def.type == Location.__name__:  # should be isinstance(field, Location)
-                    items_as_str.append(str(field_value))
-                else:
-                    items_as_str.append(f"{{ {field_name}: {str(field_value)} }}")
-            elif isinstance(field_value, str):
-                items_as_str.append(f'{field_name}: "{field_value}"')
+                items_as_str.append(f"{field_name}: {str(field_value)}")
             else:
-                items_as_str.append(f"{field_name}: {field_value}")
+                items_as_str.append(f"{field_name}: {object_to_cypher_repr(field_value)}")
         return f'{", ".join(items_as_str)}'
 
 
@@ -90,16 +87,30 @@ class BusStationNode(Neo4jBase):
     like class based on Neo4jBase
     """
 
-    station_id: int
-    city: StrictStr
+    station_id: int  # id_for_reach
+    city_name: StrictStr
+    city_uuid: StrictStr
     region: StrictStr
     location: Location
-    id_for_reach: int
     node_type: StrictStr = "bus_station"
     service: StrictStr = "flixbus"
-    service_reachable_ids: list[int] | None = None
-    uuid_from_service: StrictStr | None = None
+    reachable_ids: list[int] | None = None
+    station_uuid: StrictStr | None = None
     is_popular: bool = False
+
+
+@dataclass
+class NodeRelationShip(Neo4jBase):
+    """
+    A Neo4j node model for relationships between bus stations,
+    like class based on Neo4jBase
+    """
+
+    relation_name: StrictStr = "CAN_TRANSFER_TO"
+    service: StrictStr = "flixbus"
+    schedules: List[datetime.datetime] = None
+    average_duration: datetime.timedelta = None
+    average_price: float = None  # TODO manage currencies
 
 
 AsyncDriverType = TypeVar("neo4j.AsyncDriver")
@@ -108,7 +119,7 @@ AsyncDriverType = TypeVar("neo4j.AsyncDriver")
 @dataclass
 class Neo4JConn:
     """
-    Class for   connecting with a neo4j db instance
+    Class for connecting with a neo4j db instance
     - using a driver
     - running cypher queries
     """

@@ -1,13 +1,19 @@
 """
 Implements tests for Neo4j-based data models.
 """
+import datetime
 import unittest
 
 import pytest
 from pydantic import ValidationError
 
-from neo4j_graph import BusStationNode, Location, Neo4JConn
-from tests.neo4j import BusStationNodeFactory, LocationFactory, Neo4JConnFactory
+from neo4j_graph import BusStationNode, Location, Neo4JConn, NodeRelationShip
+from tests.neo4j import (
+    BusStationNodeFactory,
+    LocationFactory,
+    Neo4JConnFactory,
+    NodeRelationshipFactory,
+)
 
 
 class LocationTestCase(unittest.TestCase):
@@ -61,40 +67,78 @@ class TestBusStationNode(unittest.TestCase):
         node = BusStationNodeFactory()
         self.assertIsInstance(node, BusStationNode)
 
-        self.assertIsInstance(node.city, str)
+        self.assertIsInstance(node.city_name, str)
         self.assertIsInstance(node.region, str)
         self.assertIsInstance(node.location, Location)
         self.assertIsInstance(node.node_type, str)
         self.assertIsInstance(node.is_popular, bool)
 
         self.assertIsInstance(node.station_id, int)
-        self.assertIsInstance(node.id_for_reach, int)
         self.assertIsInstance(node.service, str)
-        self.assertIsInstance(node.service_reachable_ids, (list, type(None)))
-        if node.service_reachable_ids is not None:
-            self.assertTrue(all(isinstance(i, int) for i in node.service_reachable_ids))
-        self.assertIsInstance(node.uuid_from_service, (str, type(None)))
+        self.assertIsInstance(node.reachable_ids, (list, type(None)))
+        if node.reachable_ids is not None:
+            self.assertTrue(all(isinstance(i, int) for i in node.reachable_ids))
 
     def test_valid_cypher_repr(self):
         node = self.dummy_node
         cypher_for_dummy_location = self.cypher_for_dummy_location
         cypher_node_repr = (
             f"station_id: 123, "
-            f'city: "Dummy City", '
-            f'region: "Dummy Region", '
-            f"{cypher_for_dummy_location}, "
-            f"id_for_reach: 456, "
+            f'city_name: "dummy-city", '
+            f'city_uuid: "dummy-city-uuid", '
+            f'region: "dummy-region", '
+            f"location: {cypher_for_dummy_location}, "
             f'node_type: "bus_station", '
             f'service: "flixbus", '
-            f"service_reachable_ids: [789, 101112], "
-            f'uuid_from_service: "dummy-uuid", '
-            f"is_popular: False"
+            f"reachable_ids: [1, 2, 3], "
+            f'station_uuid: "dummy-station-uuid", '
+            f"is_popular: false"
         )
         assert pytest.approx(str(node)) == pytest.approx(cypher_node_repr)
 
     def test_invalid_name_type(self):
         with self.assertRaises(ValidationError):
-            BusStationNodeFactory(city=3.14)
+            BusStationNodeFactory(city_name=3.14)
+
+    def test_invalid_region_type(self):
+        with self.assertRaises(ValidationError):
+            BusStationNodeFactory(region=3.141)
+
+    def test_invalid_node_type_type(self):
+        with self.assertRaises(ValidationError):
+            BusStationNodeFactory(node_type=3.14159)
+
+
+class TestNodeRelationShip(unittest.TestCase):
+    @pytest.fixture(autouse=True)
+    def __inject_fixtures(self, dummy_node_relationship):
+        self.dummy_node_relationship = dummy_node_relationship
+
+    def test_neo4j_relationship(self):
+        relationship = NodeRelationshipFactory()
+        self.assertIsInstance(relationship, NodeRelationShip)
+
+        self.assertIsInstance(relationship.relation_name, str)
+        self.assertIsInstance(relationship.service, str)
+        self.assertIsInstance(relationship.schedules, (list, type(None)))
+        if relationship.schedules is not None:
+            self.assertTrue(all(isinstance(i, datetime.datetime) for i in relationship.schedules))
+        self.assertIsInstance(relationship.average_price, float)
+
+    def test_valid_cypher_repr(self):
+        relationship = self.dummy_node_relationship
+        cypher_relationship = (
+            'relation_name: "dummy-relation-name", '
+            'service: "dummy-service", '
+            'schedules: [datetime("2023-01-01T00:00:00.000000")], '
+            "average_duration: { hours: 1, minutes: 15 }, "
+            "average_price: 0.0"
+        )
+        assert pytest.approx(str(relationship)) == pytest.approx(cypher_relationship)
+
+    def test_invalid_name_type(self):
+        with self.assertRaises(ValidationError):
+            BusStationNodeFactory(city_name=3.14)
 
     def test_invalid_region_type(self):
         with self.assertRaises(ValidationError):

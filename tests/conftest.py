@@ -13,10 +13,11 @@ Factories:
 - CompanyInfoFactory
 - Neo4JNodeFactory
 """
+import datetime
 
 import pytest
 
-from tests.neo4j import BusStationNodeFactory, LocationFactory
+from tests.neo4j import BusStationNodeFactory, LocationFactory, NodeRelationshipFactory
 
 
 @pytest.fixture
@@ -26,17 +27,30 @@ def dummy_location():
 
 @pytest.fixture
 def cypher_for_dummy_location():
-    return "location: point({ longitude: 0.0, latitude: 0.0 })"
+    return "point({ longitude: 0.0, latitude: 0.0 })"
 
 
 @pytest.fixture
 def dummy_node(dummy_location):
     return BusStationNodeFactory(
         station_id=123,
-        city="Dummy City",
-        region="Dummy Region",
+        city_name="dummy-city",
+        city_uuid="dummy-city-uuid",
+        region="dummy-region",
         location=dummy_location,
-        id_for_reach=456,
-        service_reachable_ids=[789, 101112],
-        uuid_from_service="dummy-uuid",
+        node_type="bus_station",
+        service="flixbus",
+        service_reachable_ids=[1, 2, 3],
+        station_uuid="dummy-station-uuid",
+    )
+
+
+@pytest.fixture
+def dummy_node_relationship():
+    return NodeRelationshipFactory(
+        relation_name="dummy-relation-name",
+        service="dummy-service",
+        schedules=[datetime.datetime(2023, 1, 1)],
+        average_duration=datetime.timedelta(hours=1, minutes=15),
+        average_price=0.0,
     )

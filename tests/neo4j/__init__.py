@@ -16,11 +16,14 @@ Note: The factories rely on the 'factory' library
 and the 'Faker' class from the 'factory.Faker' module.
 Make sure to install the required dependencies before using the factories.
 """
+import datetime
 import random
 
+import pytz
 from factory import Factory, Faker, LazyAttribute, List, SubFactory
+from factory.fuzzy import FuzzyDate, FuzzyDateTime
 
-from neo4j_graph import BusStationNode, Location, Neo4JConn
+from neo4j_graph import BusStationNode, Location, Neo4JConn, NodeRelationShip
 
 
 class LocationFactory(Factory):
@@ -35,16 +38,36 @@ class BusStationNodeFactory(Factory):
     class Meta:
         model = BusStationNode
 
-    node_type = "bus_station"
     station_id = LazyAttribute(lambda _: random.randint(0, 100))
-    city = Faker("city")
+    city_name = Faker("city")
+    city_uuid = Faker("uuid4")
     region = Faker("country")
     location = SubFactory(LocationFactory)
-    service = "flixbus"
-    service_reachable_ids = List([1, 2, 3])
-    id_for_reach = LazyAttribute(lambda _: random.randint(0, 100))
-    uuid_from_service = Faker("uuid4")
-    is_popular = False
+    reachable_ids = List([1, 2, 3])
+    station_uuid = Faker("uuid4")
+    # is_popular = False
+
+
+def random_datetimes(cant: int = None):
+    days = random.randint(0, 100)
+
+    start_date = datetime.datetime.now()
+    end_date = start_date + datetime.timedelta(days=days)
+    start_date, end_date = pytz.utc.localize(start_date), pytz.utc.localize(end_date)
+
+    fdt = FuzzyDateTime(start_date, end_date)
+    computed_attr = cant if cant else random.randint(0, 9)
+    return fdt.evaluate(computed_attr, None, None)
+
+
+class NodeRelationshipFactory(Factory):
+    class Meta:
+        model = NodeRelationShip
+
+    # relation_name = "CAN_TRANSFER_TO"
+    # service = "flixbus"
+    schedules = List([random_datetimes() for _ in range(1, 3)])
+    average_price = LazyAttribute(lambda _: round(random.random(), 2) * 100)
 
 
 class Neo4JConnFactory(Factory):
