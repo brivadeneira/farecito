@@ -82,30 +82,38 @@ class Neo4jBase:
 
 
 @dataclass
-class BusStationNode(Neo4jBase):
+class Node(Neo4jBase):
+    id: int
+    node_type: StrictStr | None = None
+
+
+@dataclass(kw_only=True)
+class BusStationNode(Node):
     """
     A Neo4j node model for bus stations,
     like class based on Neo4jBase
     """
 
-    station_id: int  # id_for_reach
     city_name: StrictStr
     city_uuid: StrictStr
     region: StrictStr
     location: Location
-    node_type: StrictStr = "bus_station"
     service: StrictStr = "flixbus"
     reachable_ids: list[int] | None = None
     station_uuid: StrictStr | None = None
     is_popular: bool = False
 
-    def build_create_query(self, label: str = "BusStation"):
+    def __post_init__(self):
+        self.node_type = "BusStation"
+
+    def build_create_query(self, label: str = None):
         """
         Builds a cypher query for create the node,
         e.g. 'CREATE (n:BusStation {id: 123})'
         e.g. CREATE (n:City {name: 'Lisbon'})
         :param label: (str) 'BusStation' by default
         """
+        label = self.node_type if not label else label
         camel_label = to_camel(label)
         cap_camel_label = f"{camel_label[0].upper()}{camel_label[1:]}"
         return f"CREATE ( n:{cap_camel_label} {{ {str(self)} }} )"

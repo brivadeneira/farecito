@@ -39,6 +39,7 @@ class LocationTestCase(unittest.TestCase):
     def test_valid_cypher_repr(self):
         location = self.dummy_location
         cypher_point_repr = self.cypher_for_dummy_location
+        # TODO: improve strings comparison
         assert pytest.approx(str(location)) == pytest.approx(cypher_point_repr)
 
     def test_invalid_latitude(self):
@@ -74,7 +75,7 @@ class TestBusStationNode(ParametrizedTestCase):
         self.assertIsInstance(node.node_type, str)
         self.assertIsInstance(node.is_popular, bool)
 
-        self.assertIsInstance(node.station_id, int)
+        self.assertIsInstance(node.id, int)
         self.assertIsInstance(node.service, str)
         self.assertIsInstance(node.reachable_ids, (list, type(None)))
         if node.reachable_ids is not None:
@@ -84,12 +85,12 @@ class TestBusStationNode(ParametrizedTestCase):
         node = self.dummy_node
         cypher_for_dummy_location = self.cypher_for_dummy_location
         cypher_node_repr = (
-            f"station_id: 123, "
+            f"id: 123, "
+            f'node_type: "BusStation", '
             f'city_name: "dummy-city", '
             f'city_uuid: "dummy-city-uuid", '
             f'region: "dummy-region", '
             f"location: {cypher_for_dummy_location}, "
-            f'node_type: "bus_station", '
             f'service: "flixbus", '
             f"reachable_ids: [1, 2, 3], "
             f'station_uuid: "dummy-station-uuid", '
@@ -105,10 +106,6 @@ class TestBusStationNode(ParametrizedTestCase):
         with self.assertRaises(ValidationError):
             BusStationNodeFactory(region=3.141)
 
-    def test_invalid_node_type_type(self):
-        with self.assertRaises(ValidationError):
-            BusStationNodeFactory(node_type=3.14159)
-
     @parametrize(
         "label,camel_label",
         [
@@ -121,13 +118,11 @@ class TestBusStationNode(ParametrizedTestCase):
     def test_build_create_single_node(self, label, camel_label):
         node = self.dummy_node
         expected_create_query = (
-            f"CREATE ( n:{camel_label} "
-            '{ station_id: 123, city_name: "dummy-city", city_uuid: '
-            '"dummy-city-uuid", region: "dummy-region", '
-            "location: point({ longitude: 0.0, latitude: 0.0 }), "
-            'node_type: "bus_station", service: "flixbus", '
-            "reachable_ids: [1, 2, 3], station_uuid: "
-            '"dummy-station-uuid", is_popular: false } )'
+            f'CREATE ( n:{camel_label} {{ id: 123, node_type: "BusStation", '
+            f'city_name: "dummy-city", city_uuid: "dummy-city-uuid", '
+            f'region: "dummy-region", location: point({{ longitude: 0.0, latitude: 0.0 }}), '
+            f'service: "flixbus", reachable_ids: [1, 2, 3], '
+            f'station_uuid: "dummy-station-uuid", is_popular: false }} )'
         )
         got_create_query = node.build_create_query(label) if label else node.build_create_query()
         assert pytest.approx(expected_create_query) == pytest.approx(got_create_query)
@@ -167,10 +162,6 @@ class TestNodeRelationShip(unittest.TestCase):
     def test_invalid_region_type(self):
         with self.assertRaises(ValidationError):
             BusStationNodeFactory(region=3.141)
-
-    def test_invalid_node_type_type(self):
-        with self.assertRaises(ValidationError):
-            BusStationNodeFactory(node_type=3.14159)
 
 
 class TestNeo4JConn(unittest.TestCase):

@@ -38,7 +38,7 @@ class BusStationNodeFactory(Factory):
     class Meta:
         model = BusStationNode
 
-    station_id = LazyAttribute(lambda _: random.randint(0, 100))
+    id = LazyAttribute(lambda _: random.randint(0, 100))
     city_name = Faker("city")
     city_uuid = Faker("uuid4")
     region = Faker("country")

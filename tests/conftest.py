@@ -33,7 +33,7 @@ def cypher_for_dummy_location():
 @pytest.fixture
 def dummy_node(dummy_location):
     return BusStationNodeFactory(
-        station_id=123,
+        id=123,
         city_name="dummy-city",
         city_uuid="dummy-city-uuid",
         region="dummy-region",
