@@ -6,6 +6,7 @@ import unittest
 
 import pytest
 from pydantic import ValidationError
+from unittest_parametrize import ParametrizedTestCase, parametrize
 
 from neo4j_graph import BusStationNode, Location, Neo4JConn, NodeRelationShip
 from tests.neo4j import (
@@ -57,7 +58,7 @@ class LocationTestCase(unittest.TestCase):
             LocationFactory(longitude="180")
 
 
-class TestBusStationNode(unittest.TestCase):
+class TestBusStationNode(ParametrizedTestCase):
     @pytest.fixture(autouse=True)
     def __inject_fixtures(self, dummy_node, cypher_for_dummy_location):
         self.dummy_node = dummy_node
@@ -107,6 +108,29 @@ class TestBusStationNode(unittest.TestCase):
     def test_invalid_node_type_type(self):
         with self.assertRaises(ValidationError):
             BusStationNodeFactory(node_type=3.14159)
+
+    @parametrize(
+        "label,camel_label",
+        [
+            ("FooLabel", "FooLabel"),
+            ("spam_label", "SpamLabel"),
+            ("foo", "Foo"),
+            (None, "BusStation"),
+        ],
+    )
+    def test_build_create_single_node(self, label, camel_label):
+        node = self.dummy_node
+        expected_create_query = (
+            f"CREATE ( n:{camel_label} "
+            '{ station_id: 123, city_name: "dummy-city", city_uuid: '
+            '"dummy-city-uuid", region: "dummy-region", '
+            "location: point({ longitude: 0.0, latitude: 0.0 }), "
+            'node_type: "bus_station", service: "flixbus", '
+            "reachable_ids: [1, 2, 3], station_uuid: "
+            '"dummy-station-uuid", is_popular: false } )'
+        )
+        got_create_query = node.build_create_query(label) if label else node.build_create_query()
+        assert pytest.approx(expected_create_query) == pytest.approx(got_create_query)
 
 
 class TestNodeRelationShip(unittest.TestCase):

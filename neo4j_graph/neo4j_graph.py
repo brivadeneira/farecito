@@ -15,6 +15,7 @@ import uuid
 from dataclasses import is_dataclass
 from typing import List, TypeVar
 
+from camel_converter import to_camel
 from neo4j import AsyncGraphDatabase
 from neo4j.exceptions import AuthError, DatabaseError, DriverError, Forbidden
 from pydantic import StrictStr, ValidationError
@@ -97,6 +98,17 @@ class BusStationNode(Neo4jBase):
     reachable_ids: list[int] | None = None
     station_uuid: StrictStr | None = None
     is_popular: bool = False
+
+    def build_create_query(self, label: str = "BusStation"):
+        """
+        Builds a cypher query for create the node,
+        e.g. 'CREATE (n:BusStation {id: 123})'
+        e.g. CREATE (n:City {name: 'Lisbon'})
+        :param label: (str) 'BusStation' by default
+        """
+        camel_label = to_camel(label)
+        cap_camel_label = f"{camel_label[0].upper()}{camel_label[1:]}"
+        return f"CREATE ( n:{cap_camel_label} {{ {str(self)} }} )"
 
 
 @dataclass
