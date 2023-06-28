@@ -1,10 +1,15 @@
+# pylint: skip-file
+# TODO fix astroid-error
 """
 Implements classes for Neo4j-based data models.
 
 Classes:
 - Neo4jBase: Base class for Neo4j models with type validation and conversion methods.
-- Location: Represents a geographic location with latitude and longitude values.
-- Neo4JNode: Represents a node in the Neo4j graph database.
+- Location: Represents a geographic location with latitude and longitude values for node properties.
+- Node: Represents a node in the Neo4j graph database.
+- BusStationNode: A specific type of Neo4J node.
+- NodeRelationShip: A Neo4J like class for relationships between nodes.
+- Neo4JConn: A class for connections with a Neo4j graph db
 """
 from __future__ import annotations
 
@@ -91,17 +96,18 @@ class Node(Neo4jBase):
     id: int
     node_type: StrictStr | None = None
 
+    # TODO remove this property, it is not useful anymore
     @property
-    def node_properties(self) -> set:
+    def node_properties(self) -> list:
         """
-        Get all property names of the node in a set,
+        Get all property names of the node
         useful for compare nodes structure
-        :return: (set)
+        :return: (list)
         """
-        node_properties = [field_name for field_name, _ in self.__dataclass_fields__.items()]
-        return set(node_properties)
+        return [field_name for field_name, _ in self.__dataclass_fields__.items()]
 
-    def build_cypher_node_properties(self) -> str:
+    @property
+    def cypher_node_properties(self) -> str:
         """
         Builds a general cypher representation for node properties,
         useful for multiple nodes operations.

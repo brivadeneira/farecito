@@ -103,12 +103,12 @@ class NodeTestCase(ParametrizedTestCase):
     def test_get_node_properties(self):
         node = self.dummy_node
         expected_properties = {"id", "node_type"}
-        self.assertTrue(expected_properties == node.node_properties)
+        self.assertTrue(expected_properties == set(node.node_properties))
 
     def test_build_cypher_node_properties(self):
         node = self.dummy_node
         expected_cypher_properties = {"id: node.id", "node_type: node.node_type"}
-        got_properties = node.build_cypher_node_properties()
+        got_properties = node.cypher_node_properties
         set_got_properties = set(got_properties.split(", "))
         self.assertTrue(expected_cypher_properties == set_got_properties)
 
@@ -161,7 +161,7 @@ class TestBusStationNode(ParametrizedTestCase):
             "service",
             "id",
         }
-        self.assertTrue(expected_properties == node.node_properties)
+        self.assertTrue(expected_properties == set(node.node_properties))
 
     def test_build_cypher_node_properties(self):
         node = self.dummy_bus_station_node
@@ -177,7 +177,7 @@ class TestBusStationNode(ParametrizedTestCase):
             "station_uuid: node.station_uuid",
             "is_popular: node.is_popular",
         }
-        got_properties = node.build_cypher_node_properties()
+        got_properties = node.cypher_node_properties
         set_got_properties = set(got_properties.split(", "))
         self.assertTrue(expected_cypher_properties == set_got_properties)
 

@@ -5,6 +5,6 @@ Neo4J Graph provides models, utils and settings for:
 - settings and misc utils for neo4j-farecito flow
 """
 
-from .neo4j_graph import *
+from .models import *
 from .settings import *
 from .utils import *
