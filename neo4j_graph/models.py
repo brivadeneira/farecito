@@ -26,7 +26,7 @@ from neo4j.exceptions import AuthError, DatabaseError, DriverError, Forbidden
 from pydantic import StrictStr, ValidationError
 from pydantic.dataclasses import dataclass
 
-from neo4j_graph.utils import object_to_cypher_repr
+from neo4j_graph.utils import format_node_type_label, object_to_cypher_repr
 from settings import APP_NAME, SLEEP_TIME
 
 logger = logging.getLogger(APP_NAME)
@@ -94,9 +94,9 @@ class Node(Neo4jBase):
     """
 
     id: int
-    node_type: StrictStr | None = None
+    node_type: StrictStr = "node"
+    reachable_ids: list[int] | None = None
 
-    # TODO remove this property, it is not useful anymore
     @property
     def node_properties(self) -> list:
         """
@@ -124,9 +124,8 @@ class Node(Neo4jBase):
         :param label: (str) 'BusStation' by default
         """
         label = self.node_type if not label else label
-        camel_label = to_camel(label)
-        cap_camel_label = f"{camel_label[0].upper()}{camel_label[1:]}"
-        return f"CREATE ( n:{cap_camel_label} {{ {str(self)} }} )"
+
+        return f"CREATE ( n:{format_node_type_label(label)} {{ {str(self)} }} )"
 
 
 @dataclass(kw_only=True)
@@ -141,7 +140,6 @@ class BusStationNode(Node):
     region: StrictStr
     location: Location
     service: StrictStr = "flixbus"
-    reachable_ids: list[int] | None = None
     station_uuid: StrictStr | None = None
     is_popular: bool = False
 

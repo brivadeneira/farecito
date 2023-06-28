@@ -40,6 +40,7 @@ class NodeFactory(Factory):
 
     id = LazyAttribute(lambda _: random.randint(0, 100))
     node_type = "node"
+    reachable_ids = List([1, 2, 3])
 
 
 class BusStationNodeFactory(Factory):
@@ -51,7 +52,6 @@ class BusStationNodeFactory(Factory):
     city_uuid = Faker("uuid4")
     region = Faker("country")
     location = SubFactory(LocationFactory)
-    reachable_ids = List([1, 2, 3])
     station_uuid = Faker("uuid4")
     # is_popular = False
 

@@ -30,7 +30,7 @@ def cypher_for_dummy_location():
     return "point({ longitude: 0.0, latitude: 0.0 })"
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def dummy_node():
     return NodeFactory(
         id=123,
@@ -40,25 +40,25 @@ def dummy_node():
 
 @pytest.fixture
 def cypher_for_dummy_node():
-    return 'id: 123, node_type: "bus_station"'
+    return 'id: 123, node_type: "bus_station", reachable_ids: [1, 2, 3]'
 
 
 @pytest.fixture
 def cypher_for_dummy_node_properties():
-    return "id: node.id, node_type: node.node_type"
+    return "id: node.id, node_type: node.node_type, reachable_ids: node.reachable_ids"
 
 
 @pytest.fixture
 def dummy_bus_station_node(dummy_location):
     return BusStationNodeFactory(
         id=123,
+        node_type="bus_station",
+        reachable_ids=[1, 2, 3],
         city_name="dummy-city",
         city_uuid="dummy-city-uuid",
         region="dummy-region",
         location=dummy_location,
-        node_type="bus_station",
         service="flixbus",
-        service_reachable_ids=[1, 2, 3],
         station_uuid="dummy-station-uuid",
     )
 

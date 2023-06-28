@@ -17,13 +17,6 @@ from tests.neo4j import (
     NodeRelationshipFactory,
 )
 
-labels_for_parametrize = [
-    ("FooLabel", "FooLabel"),
-    ("spam_label", "SpamLabel"),
-    ("foo", "Foo"),
-    (None, "BusStation"),
-]
-
 
 class LocationTestCase(unittest.TestCase):
     """
@@ -86,6 +79,9 @@ class NodeTestCase(ParametrizedTestCase):
         node = NodeFactory()
         self.assertIsInstance(node.id, int)
         self.assertIsInstance(node.node_type, (str, type(None)))
+        self.assertIsInstance(node.reachable_ids, (list, type(None)))
+        if node.reachable_ids is not None:
+            self.assertTrue(all(isinstance(i, int) for i in node.reachable_ids))
 
     def test_valid_cypher_repr(self):
         node = self.dummy_node
@@ -102,26 +98,32 @@ class NodeTestCase(ParametrizedTestCase):
 
     def test_get_node_properties(self):
         node = self.dummy_node
-        expected_properties = {"id", "node_type"}
+        expected_properties = {"id", "node_type", "reachable_ids"}
         self.assertTrue(expected_properties == set(node.node_properties))
 
     def test_build_cypher_node_properties(self):
         node = self.dummy_node
-        expected_cypher_properties = {"id: node.id", "node_type: node.node_type"}
+        expected_cypher_properties = {
+            "id: node.id",
+            "node_type: node.node_type",
+            "reachable_ids: node.reachable_ids",
+        }
         got_properties = node.cypher_node_properties
         set_got_properties = set(got_properties.split(", "))
         self.assertTrue(expected_cypher_properties == set_got_properties)
 
-    @parametrize("label,camel_label", labels_for_parametrize)
+    @parametrize("label,camel_label", [(None, "BusStation"), ("foo_bar", "FooBar")])
     def test_build_create_single_node(self, label, camel_label):
         node = self.dummy_node
         expected_create_query = (
-            f'CREATE ( n:{camel_label} {{ id: 123, node_type: "bus_station" }} )'
+            f"CREATE ( n:{camel_label} "
+            f'{{ id: 123, node_type: "bus_station", reachable_ids: [1, 2, 3] }} )'
         )
 
         got_create_query = (
             node.build_create_cypher_query(label) if label else node.build_create_cypher_query()
         )
+
         assert pytest.approx(expected_create_query) == pytest.approx(got_create_query)
 
 
@@ -143,9 +145,6 @@ class TestBusStationNode(ParametrizedTestCase):
 
         self.assertIsInstance(node.id, int)
         self.assertIsInstance(node.service, str)
-        self.assertIsInstance(node.reachable_ids, (list, type(None)))
-        if node.reachable_ids is not None:
-            self.assertTrue(all(isinstance(i, int) for i in node.reachable_ids))
 
     def test_get_node_properties(self):
         node = self.dummy_bus_station_node
@@ -187,12 +186,12 @@ class TestBusStationNode(ParametrizedTestCase):
         cypher_node_repr = (
             f"id: 123, "
             f'node_type: "BusStation", '
+            f"reachable_ids: [1, 2, 3], "
             f'city_name: "dummy-city", '
             f'city_uuid: "dummy-city-uuid", '
             f'region: "dummy-region", '
             f"location: {cypher_for_dummy_location}, "
             f'service: "flixbus", '
-            f"reachable_ids: [1, 2, 3], "
             f'station_uuid: "dummy-station-uuid", '
             f"is_popular: false"
         )
@@ -206,15 +205,14 @@ class TestBusStationNode(ParametrizedTestCase):
         with self.assertRaises(ValidationError):
             BusStationNodeFactory(region=3.141)
 
-    @parametrize("label,camel_label", labels_for_parametrize)
+    @parametrize("label,camel_label", [(None, "BusStation"), ("bar", "Bar")])
     def test_build_create_single_node(self, label, camel_label):
         node = self.dummy_bus_station_node
         expected_create_query = (
             f'CREATE ( n:{camel_label} {{ id: 123, node_type: "BusStation", '
-            f'city_name: "dummy-city", city_uuid: "dummy-city-uuid", '
+            f'reachable_ids: [1, 2, 3], city_name: "dummy-city", city_uuid: "dummy-city-uuid", '
             f'region: "dummy-region", location: point({{ longitude: 0.0, latitude: 0.0 }}), '
-            f'service: "flixbus", reachable_ids: [1, 2, 3], '
-            f'station_uuid: "dummy-station-uuid", is_popular: false }} )'
+            f'service: "flixbus", station_uuid: "dummy-station-uuid", is_popular: false }} )'
         )
         got_create_query = (
             node.build_create_cypher_query(label) if label else node.build_create_cypher_query()

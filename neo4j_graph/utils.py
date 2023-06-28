@@ -2,6 +2,8 @@
 import datetime
 from typing import Iterable
 
+from camel_converter import to_camel
+
 
 def date_time_to_cypher_conversion(date_time_object: datetime.datetime | datetime.timedelta) -> str:
     """
@@ -61,3 +63,17 @@ def object_to_cypher_repr(_obj: any) -> str:
     if isinstance(_obj, (int, float)):
         return str(_obj)
     raise ValueError(f"No type compatible with neo4j API: {type(_obj)}")
+
+
+def format_node_type_label(label: str) -> str:
+    """
+    Tt is useful for cypher queries building
+    e.g. 'bus_station' -> 'BusStation'
+    e.g. 'foo' -> 'Foo'
+    :param label: (str) any format string
+    :return: (str) a camel case label (with uppercase at the beginning)
+    """
+    if not label:
+        return ""
+    camel_label = to_camel(label)
+    return f"{camel_label[0].upper()}{camel_label[1:]}"
