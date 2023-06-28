@@ -68,6 +68,7 @@ class Neo4jConnTests(IsolatedAsyncioTestCase):
 
 
 # TODO add more tests
+# TODO solve 'PytestUnknownMarkWarning: Unknown pytest.mark.asyncio - is this a typo?'
 
 
 if __name__ == "__main__":

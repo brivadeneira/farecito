@@ -23,7 +23,7 @@ import pytz
 from factory import Factory, Faker, LazyAttribute, List, SubFactory
 from factory.fuzzy import FuzzyDate, FuzzyDateTime
 
-from neo4j_graph import BusStationNode, Location, Neo4JConn, NodeRelationShip
+from neo4j_graph import BusStationNode, Location, Neo4JConn, Node, NodeRelationShip
 
 
 class LocationFactory(Factory):
@@ -32,6 +32,14 @@ class LocationFactory(Factory):
 
     latitude = LazyAttribute(lambda _: random.uniform(-90, 90))
     longitude = LazyAttribute(lambda _: random.uniform(-180, 180))
+
+
+class NodeFactory(Factory):
+    class Meta:
+        model = Node
+
+    id = LazyAttribute(lambda _: random.randint(0, 100))
+    node_type = "node"
 
 
 class BusStationNodeFactory(Factory):

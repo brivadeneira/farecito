@@ -17,7 +17,7 @@ import datetime
 
 import pytest
 
-from tests.neo4j import BusStationNodeFactory, LocationFactory, NodeRelationshipFactory
+from tests.neo4j import BusStationNodeFactory, LocationFactory, NodeFactory, NodeRelationshipFactory
 
 
 @pytest.fixture
@@ -31,7 +31,25 @@ def cypher_for_dummy_location():
 
 
 @pytest.fixture
-def dummy_node(dummy_location):
+def dummy_node():
+    return NodeFactory(
+        id=123,
+        node_type="bus_station",
+    )
+
+
+@pytest.fixture
+def cypher_for_dummy_node():
+    return 'id: 123, node_type: "bus_station"'
+
+
+@pytest.fixture
+def cypher_for_dummy_node_properties():
+    return "id: node.id, node_type: node.node_type"
+
+
+@pytest.fixture
+def dummy_bus_station_node(dummy_location):
     return BusStationNodeFactory(
         id=123,
         city_name="dummy-city",
@@ -49,7 +67,6 @@ def dummy_node(dummy_location):
 def dummy_node_relationship():
     return NodeRelationshipFactory(
         relation_name="dummy-relation-name",
-        service="dummy-service",
         schedules=[datetime.datetime(2023, 1, 1)],
         average_duration=datetime.timedelta(hours=1, minutes=15),
         average_price=0.0,

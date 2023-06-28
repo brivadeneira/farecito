@@ -83,8 +83,44 @@ class Neo4jBase:
 
 @dataclass
 class Node(Neo4jBase):
+    """
+    A Neo4j node elemental model
+    like class based on Neo4jBase
+    """
+
     id: int
     node_type: StrictStr | None = None
+
+    @property
+    def node_properties(self) -> set:
+        """
+        Get all property names of the node in a set,
+        useful for compare nodes structure
+        :return: (set)
+        """
+        node_properties = [field_name for field_name, _ in self.__dataclass_fields__.items()]
+        return set(node_properties)
+
+    def build_cypher_node_properties(self) -> str:
+        """
+        Builds a general cypher representation for node properties,
+        useful for multiple nodes operations.
+        e.g. 'id: node.id, node_type: node.node_type'
+        :return:
+        """
+        return ", ".join(f"{prop}: node.{prop}" for prop in self.node_properties)
+
+    def build_create_cypher_query(self, label: str = None) -> str:
+        """
+        Builds a cypher query for create the node,
+        e.g. 'CREATE (n:BusStation {id: 123})'
+        e.g. CREATE (n:City {name: 'Lisbon'})
+        :param label: (str) 'BusStation' by default
+        """
+        label = self.node_type if not label else label
+        camel_label = to_camel(label)
+        cap_camel_label = f"{camel_label[0].upper()}{camel_label[1:]}"
+        return f"CREATE ( n:{cap_camel_label} {{ {str(self)} }} )"
 
 
 @dataclass(kw_only=True)
@@ -106,18 +142,6 @@ class BusStationNode(Node):
     def __post_init__(self):
         self.node_type = "BusStation"
 
-    def build_create_query(self, label: str = None):
-        """
-        Builds a cypher query for create the node,
-        e.g. 'CREATE (n:BusStation {id: 123})'
-        e.g. CREATE (n:City {name: 'Lisbon'})
-        :param label: (str) 'BusStation' by default
-        """
-        label = self.node_type if not label else label
-        camel_label = to_camel(label)
-        cap_camel_label = f"{camel_label[0].upper()}{camel_label[1:]}"
-        return f"CREATE ( n:{cap_camel_label} {{ {str(self)} }} )"
-
 
 @dataclass
 class NodeRelationShip(Neo4jBase):
@@ -127,7 +151,7 @@ class NodeRelationShip(Neo4jBase):
     """
 
     relation_name: StrictStr = "CAN_TRANSFER_TO"
-    service: StrictStr = "flixbus"
+    travel_mode: StrictStr = "bus"
     schedules: List[datetime.datetime] = None
     average_duration: datetime.timedelta = None
     average_price: float = None  # TODO manage currencies
