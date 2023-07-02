@@ -6,7 +6,7 @@ import unittest
 
 import pytest
 
-from neo4j_graph import format_node_type_label, object_to_cypher_repr
+from neo4j_graph import get_cypher_core_data_type, snake_to_upper_camel
 
 test_objects_to_cypher_with_ids = [
     [None, "Null", "none"],
@@ -19,10 +19,14 @@ test_objects_to_cypher_with_ids = [
     ],
     [
         datetime.timedelta(hours=1, minutes=20, seconds=5),
-        "{ hours: 1, minutes: 20 }",
+        "duration({ hours: 1, minutes: 20 })",
         "datetime_with_hours_and_min",
     ],
-    [datetime.timedelta(seconds=3662), "{ hours: 1, minutes: 1 }", "datetime_just_with_seconds"],
+    [
+        datetime.timedelta(seconds=3662),
+        "duration({ hours: 1, minutes: 1 })",
+        "datetime_just_with_seconds",
+    ],
     ["Turanga Leela", '"Turanga Leela"', "str"],
     [[1, 2, 3], str([1, 2, 3]), "list_of_ints"],
     [["1", "2", "3"], '["1", "2", "3"]', "list_of_strs"],
@@ -33,38 +37,38 @@ test_objects_to_cypher = [(group[0], group[1]) for group in test_objects_to_cyph
 test_objects_to_cypher_ids = [group[-1] for group in test_objects_to_cypher_with_ids]
 
 
-@pytest.mark.parametrize("_obj,cypher_repr", test_objects_to_cypher, ids=test_objects_to_cypher_ids)
-def test_object_to_cypher_repr(_obj, cypher_repr):
-    assert object_to_cypher_repr(_obj) == cypher_repr
+@pytest.mark.parametrize(
+    "_obj,expected_cypher_core_data", test_objects_to_cypher, ids=test_objects_to_cypher_ids
+)
+def test_object_to_cypher_repr(_obj, expected_cypher_core_data):
+    assert pytest.approx(get_cypher_core_data_type(_obj)) == pytest.approx(
+        expected_cypher_core_data
+    )
 
 
 @pytest.mark.parametrize(
-    "_obj",
-    [
-        type(1),
-        # TODO define other non standard or dataclass types
-    ],
+    "_obj", [type(1), [1, "2", 3.0]], ids=["wrong_type", "array_of_different_types"]
 )
 def test_invalid_name_type(_obj):
     with pytest.raises(ValueError):
-        object_to_cypher_repr(_obj)
+        get_cypher_core_data_type(_obj)
 
 
-labels_for_parametrize = [
+snake_str_for_parametrize = [
     ("FooLabel", "FooLabel"),
     ("spam_label", "SpamLabel"),
     ("foo", "Foo"),
     (None, ""),
 ]
 
-labels_for_parametrize_ids = ["already_camel_case", "snake_case", "single_lower_word", "no_label"]
+snake_str_for_parametrize_ids = ["already_camel_case", "snake_case", "single_lower_word", "none"]
 
 
 @pytest.mark.parametrize(
-    "given_label,expected_label", labels_for_parametrize, ids=labels_for_parametrize_ids
+    "snake_str,expected_camel_str", snake_str_for_parametrize, ids=snake_str_for_parametrize_ids
 )
-def test_format_node_type_label(given_label, expected_label):
-    assert expected_label == format_node_type_label(given_label)
+def test_format_node_type_label(snake_str, expected_camel_str):
+    assert pytest.approx(snake_to_upper_camel(snake_str)) == pytest.approx(expected_camel_str)
 
 
 if __name__ == "__main__":

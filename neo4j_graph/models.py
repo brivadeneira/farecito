@@ -20,23 +20,51 @@ import uuid
 from dataclasses import is_dataclass
 from typing import List, TypeVar
 
-from camel_converter import to_camel
 from neo4j import AsyncGraphDatabase
 from neo4j.exceptions import AuthError, DatabaseError, DriverError, Forbidden
 from pydantic import StrictStr, ValidationError
 from pydantic.dataclasses import dataclass
 
-from neo4j_graph.utils import format_node_type_label, object_to_cypher_repr
+from neo4j_graph.utils import get_cypher_core_data_type, snake_to_upper_camel
 from settings import APP_NAME, SLEEP_TIME
 
 logger = logging.getLogger(APP_NAME)
 logger.setLevel(logging.DEBUG)
+
+from enum import Enum
+
+
+class Currency(Enum):
+    USD = "United States Dollar"
+    EUR = "Euro Member Countries"
+    BRL = "Brazil Real"
+
+
+@dataclass
+class Price:
+    amount: float | None = None
+    currency: Currency | None = None
+
+    def __post_init__(self):
+        if self.amount:
+            try:
+                self.amount = float(self.amount)
+            except ValueError:
+                # TODO, fix this! For some reason pydantic is not validating this
+                raise TypeError(f"price amount must be a numeric not {type(self.amount)}")
+            if self.amount < 0:
+                raise TypeError(f"price must be higher than zero, not {self.amount}")
+
+    def __str__(self):
+        # TODO research how to manage amounts and currencies in neo4j (cypher)
+        return f'"{round(self.amount, 2)} {self.currency.name}"'
 
 
 @dataclass
 class Location:
     """
     A cypher point - like class based on Neo4J
+    according to https://neo4j.com/docs/cypher-manual/current/functions/spatial/
     """
 
     latitude: float | int
@@ -78,11 +106,16 @@ class Neo4jBase:
         """
         items_as_str = []
         for field_name, field_def in self.__dataclass_fields__.items():
+            if field_name == "relation_type":
+                # Avoid NodeRelationShip attribute
+                # TODO improve this
+                continue
             field_value = getattr(self, field_name)
+            property_name = snake_to_upper_camel(field_name)
             if is_dataclass(field_value):
-                items_as_str.append(f"{field_name}: {str(field_value)}")
+                items_as_str.append(f"{property_name}: {str(field_value)}")
             else:
-                items_as_str.append(f"{field_name}: {object_to_cypher_repr(field_value)}")
+                items_as_str.append(f"{property_name}: {get_cypher_core_data_type(field_value)}")
         return f'{", ".join(items_as_str)}'
 
 
@@ -98,13 +131,15 @@ class Node(Neo4jBase):
     reachable_ids: list[int] | None = None
 
     @property
-    def node_properties(self) -> list:
+    def node_properties(self) -> set:
         """
         Get all property names of the node
         useful for compare nodes structure
-        :return: (list)
+        :return: (set)
         """
-        return [field_name for field_name, _ in self.__dataclass_fields__.items()]
+        return {
+            snake_to_upper_camel(field_name) for field_name, _ in self.__dataclass_fields__.items()
+        }
 
     @property
     def cypher_node_properties(self) -> str:
@@ -114,18 +149,20 @@ class Node(Neo4jBase):
         e.g. 'id: node.id, node_type: node.node_type'
         :return:
         """
-        return ", ".join(f"{prop}: node.{prop}" for prop in self.node_properties)
+        node_properties = [
+            snake_to_upper_camel(field_name) for field_name, _ in self.__dataclass_fields__.items()
+        ]
+        return ", ".join(f"{prop}: node.{prop}" for prop in node_properties)
 
-    def build_create_cypher_query(self, label: str = None) -> str:
+    @property
+    def cypher_create_query(self) -> str:
         """
         Builds a cypher query for create the node,
         e.g. 'CREATE (n:BusStation {id: 123})'
-        e.g. CREATE (n:City {name: 'Lisbon'})
-        :param label: (str) 'BusStation' by default
+        e.g. 'CREATE (n:City {name: 'Lisbon'})'
         """
-        label = self.node_type if not label else label
-
-        return f"CREATE ( n:{format_node_type_label(label)} {{ {str(self)} }} )"
+        label = snake_to_upper_camel(self.node_type)
+        return f"CREATE ( n:{label} {{ {str(self)} }} )"
 
 
 @dataclass(kw_only=True)
@@ -139,12 +176,13 @@ class BusStationNode(Node):
     city_uuid: StrictStr
     region: StrictStr
     location: Location
+    node_type: str = "BusStation"
     service: StrictStr = "flixbus"
     station_uuid: StrictStr | None = None
     is_popular: bool = False
 
     def __post_init__(self):
-        self.node_type = "BusStation"
+        self.node_type = snake_to_upper_camel(self.node_type)
 
 
 @dataclass
@@ -154,11 +192,14 @@ class NodeRelationShip(Neo4jBase):
     like class based on Neo4jBase
     """
 
-    relation_name: StrictStr = "CAN_TRANSFER_TO"
+    relation_type: StrictStr = "CAN_TRANSFER_TO"
     travel_mode: StrictStr = "bus"
     schedules: List[datetime.datetime] = None
     average_duration: datetime.timedelta = None
-    average_price: float = None  # TODO manage currencies
+    average_price: Price = None
+
+    def __post_init__(self):
+        self.relation_type = self.relation_type.upper().replace("-", "_")
 
 
 AsyncDriverType = TypeVar("neo4j.AsyncDriver")
@@ -189,8 +230,8 @@ class Neo4JConn:
 
     def __post_init__(self):
         if not isinstance(self.uri, str):
-            #  for some reason pydantic is not validating this
-            raise ValidationError()
+            # TODO, fix this! For some reason pydantic is not validating this
+            raise TypeError(f"neo4jconn uri must be a str not {type(self.uri)}")
 
         self.auth = self.user_name, self.password
 

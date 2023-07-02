@@ -6,29 +6,53 @@ import unittest
 
 import pytest
 from pydantic import ValidationError
-from unittest_parametrize import ParametrizedTestCase, parametrize
 
-from neo4j_graph import BusStationNode, Location, Neo4JConn, NodeRelationShip
+from neo4j_graph import BusStationNode, Currency, Location, Neo4JConn, NodeRelationShip, Price
 from tests.neo4j import (
     BusStationNodeFactory,
     LocationFactory,
     Neo4JConnFactory,
     NodeFactory,
     NodeRelationshipFactory,
+    PriceFactory,
 )
 
 
-class LocationTestCase(unittest.TestCase):
+class TestPrice(unittest.TestCase):
+    @pytest.fixture(autouse=True)
+    def __inject_fixtures(self, dummy_price):
+        self.dummy_price = dummy_price
+
+    def test_price(self):
+        price = PriceFactory()
+        self.assertIsInstance(price, Price)
+
+        self.assertIsInstance(price.amount, (float, type(None)))
+        self.assertIsInstance(price.currency, (Currency, type(None)))
+
+    def test_valid_cypher_core_str(self):
+        expected_cypher_core_str = '"0.0 USD"'
+        assert pytest.approx(str(self.dummy_price)) == pytest.approx(expected_cypher_core_str)
+
+    def test_invalid_amount_value(self):
+        with self.assertRaises(TypeError):
+            PriceFactory(amount=-3.1416)
+
+    def test_invalid_amount_type(self):
+        with self.assertRaises(TypeError):
+            PriceFactory(amount="1,000")
+
+    def test_invalid_currency_type(self):
+        with self.assertRaises(ValidationError):
+            PriceFactory(currency="USD")
+
+
+class TestLocation(unittest.TestCase):
     """
     Test cases for Location model
 
     including type attr validation and cypher repr
     """
-
-    @pytest.fixture(autouse=True)
-    def __inject_fixtures(self, dummy_location, cypher_for_dummy_location):
-        self.dummy_location = dummy_location
-        self.cypher_for_dummy_location = cypher_for_dummy_location
 
     def test_valid_location(self):
         location = LocationFactory()
@@ -37,17 +61,17 @@ class LocationTestCase(unittest.TestCase):
         self.assertTrue(-90 <= location.latitude <= 90)
         self.assertTrue(-180 <= location.longitude <= 180)
 
-    def test_valid_cypher_repr(self):
-        location = self.dummy_location
-        cypher_point_repr = self.cypher_for_dummy_location
+    def test_valid_cypher_core_str(self):
+        dummy_location = LocationFactory(latitude=0.0, longitude=0.0)
+        expected_cypher_core_str = "point({ longitude: 0.0, latitude: 0.0 })"
         # TODO: improve strings comparison
-        assert pytest.approx(str(location)) == pytest.approx(cypher_point_repr)
+        assert pytest.approx(str(dummy_location)) == pytest.approx(expected_cypher_core_str)
 
-    def test_invalid_latitude(self):
+    def test_invalid_latitude_value(self):
         with self.assertRaises(ValueError):
             LocationFactory(latitude=100)
 
-    def test_invalid_longitude(self):
+    def test_invalid_longitude_value(self):
         with self.assertRaises(ValueError):
             LocationFactory(longitude=-200)
 
@@ -60,7 +84,7 @@ class LocationTestCase(unittest.TestCase):
             LocationFactory(longitude="180")
 
 
-class NodeTestCase(ParametrizedTestCase):
+class TestNode(unittest.TestCase):
     """
     Test cases for Node model
 
@@ -68,12 +92,8 @@ class NodeTestCase(ParametrizedTestCase):
     """
 
     @pytest.fixture(autouse=True)
-    def __inject_fixtures(
-        self, dummy_node, cypher_for_dummy_node, cypher_for_dummy_node_properties
-    ):
+    def __inject_fixtures(self, dummy_node):
         self.dummy_node = dummy_node
-        self.cypher_for_dummy_node = cypher_for_dummy_node
-        self.cypher_for_dummy_node_properties = cypher_for_dummy_node_properties
 
     def test_valid_node(self):
         node = NodeFactory()
@@ -83,10 +103,9 @@ class NodeTestCase(ParametrizedTestCase):
         if node.reachable_ids is not None:
             self.assertTrue(all(isinstance(i, int) for i in node.reachable_ids))
 
-    def test_valid_cypher_repr(self):
-        node = self.dummy_node
-        cypher_node_repr = self.cypher_for_dummy_node
-        assert pytest.approx(str(node)) == pytest.approx(cypher_node_repr)
+    def test_valid_cypher_core_str(self):
+        expected_cypher_core_str = 'Id: 123, NodeType: "dummy_node_type", ReachableIds: [1, 2, 3]'
+        assert pytest.approx(str(self.dummy_node)) == pytest.approx(expected_cypher_core_str)
 
     def test_invalid_int(self):
         with self.assertRaises(ValueError):
@@ -97,41 +116,31 @@ class NodeTestCase(ParametrizedTestCase):
             NodeFactory(node_type=3.14)
 
     def test_get_node_properties(self):
-        node = self.dummy_node
-        expected_properties = {"id", "node_type", "reachable_ids"}
-        self.assertTrue(expected_properties == set(node.node_properties))
+        expected_properties = {"Id", "NodeType", "ReachableIds"}
+        self.assertTrue(self.dummy_node.node_properties == expected_properties)
 
-    def test_build_cypher_node_properties(self):
-        node = self.dummy_node
-        expected_cypher_properties = {
-            "id: node.id",
-            "node_type: node.node_type",
-            "reachable_ids: node.reachable_ids",
-        }
-        got_properties = node.cypher_node_properties
-        set_got_properties = set(got_properties.split(", "))
-        self.assertTrue(expected_cypher_properties == set_got_properties)
+    def test_get_cypher_node_properties(self):
+        expected_cypher_node_properties = (
+            "Id: node.Id, NodeType: node.NodeType, ReachableIds: node.ReachableIds"
+        )
+        assert pytest.approx(self.dummy_node.cypher_node_properties) == pytest.approx(
+            expected_cypher_node_properties
+        )
 
-    @parametrize("label,camel_label", [(None, "BusStation"), ("foo_bar", "FooBar")])
-    def test_build_create_single_node(self, label, camel_label):
-        node = self.dummy_node
+    def test_cypher_create_query(self):
         expected_create_query = (
-            f"CREATE ( n:{camel_label} "
-            f'{{ id: 123, node_type: "bus_station", reachable_ids: [1, 2, 3] }} )'
+            "CREATE ( n:DummyNodeType "
+            '{ Id: 123, NodeType: "dummy_node_type", ReachableIds: [1, 2, 3] } )'
         )
 
-        got_create_query = (
-            node.build_create_cypher_query(label) if label else node.build_create_cypher_query()
-        )
-
-        assert pytest.approx(expected_create_query) == pytest.approx(got_create_query)
+        actual_create_query = self.dummy_node.cypher_create_query
+        assert pytest.approx(actual_create_query) == pytest.approx(expected_create_query)
 
 
-class TestBusStationNode(ParametrizedTestCase):
+class TestBusStationNode(unittest.TestCase):
     @pytest.fixture(autouse=True)
-    def __inject_fixtures(self, dummy_bus_station_node, cypher_for_dummy_location):
+    def __inject_fixtures(self, dummy_bus_station_node):
         self.dummy_bus_station_node = dummy_bus_station_node
-        self.cypher_for_dummy_location = cypher_for_dummy_location
 
     def test_neo4j_bus_station(self):
         node = BusStationNodeFactory()
@@ -147,55 +156,34 @@ class TestBusStationNode(ParametrizedTestCase):
         self.assertIsInstance(node.service, str)
 
     def test_get_node_properties(self):
-        node = self.dummy_bus_station_node
         expected_properties = {
-            "is_popular",
-            "region",
-            "location",
-            "reachable_ids",
-            "city_uuid",
-            "city_name",
-            "node_type",
-            "station_uuid",
-            "service",
-            "id",
+            "IsPopular",
+            "Region",
+            "Location",
+            "ReachableIds",
+            "CityUuid",
+            "CityName",
+            "NodeType",
+            "StationUuid",
+            "Service",
+            "Id",
         }
-        self.assertTrue(expected_properties == set(node.node_properties))
+        actual_node_properties = self.dummy_bus_station_node.node_properties
+        self.assertTrue(actual_node_properties == expected_properties)
 
-    def test_build_cypher_node_properties(self):
-        node = self.dummy_bus_station_node
-        expected_cypher_properties = {
-            "id: node.id",
-            "node_type: node.node_type",
-            "city_name: node.city_name",
-            "city_uuid: node.city_uuid",
-            "region: node.region",
-            "location: node.location",
-            "service: node.service",
-            "reachable_ids: node.reachable_ids",
-            "station_uuid: node.station_uuid",
-            "is_popular: node.is_popular",
-        }
-        got_properties = node.cypher_node_properties
-        set_got_properties = set(got_properties.split(", "))
-        self.assertTrue(expected_cypher_properties == set_got_properties)
-
-    def test_valid_cypher_repr(self):
-        node = self.dummy_bus_station_node
-        cypher_for_dummy_location = self.cypher_for_dummy_location
-        cypher_node_repr = (
-            f"id: 123, "
-            f'node_type: "BusStation", '
-            f"reachable_ids: [1, 2, 3], "
-            f'city_name: "dummy-city", '
-            f'city_uuid: "dummy-city-uuid", '
-            f'region: "dummy-region", '
-            f"location: {cypher_for_dummy_location}, "
-            f'service: "flixbus", '
-            f'station_uuid: "dummy-station-uuid", '
-            f"is_popular: false"
+    def test_valid_cypher_core_str(self):
+        expected_cypher_core_str = (
+            'Id: 123, NodeType: "DummyNodeType", '
+            'ReachableIds: [1, 2, 3], CityName: "dummy_city", '
+            'CityUuid: "dummy_city_uuid", Region: "dummy_region", '
+            "Location: point({ longitude: 0.0, latitude: 0.0 }), "
+            'Service: "dummy_service", StationUuid: "dummy_station_uuid", '
+            "IsPopular: false"
         )
-        assert pytest.approx(str(node)) == pytest.approx(cypher_node_repr)
+
+        assert pytest.approx(str(self.dummy_bus_station_node)) == pytest.approx(
+            expected_cypher_core_str
+        )
 
     def test_invalid_name_type(self):
         with self.assertRaises(ValidationError):
@@ -205,19 +193,16 @@ class TestBusStationNode(ParametrizedTestCase):
         with self.assertRaises(ValidationError):
             BusStationNodeFactory(region=3.141)
 
-    @parametrize("label,camel_label", [(None, "BusStation"), ("bar", "Bar")])
-    def test_build_create_single_node(self, label, camel_label):
-        node = self.dummy_bus_station_node
+    def test_cypher_create_query(self):
         expected_create_query = (
-            f'CREATE ( n:{camel_label} {{ id: 123, node_type: "BusStation", '
-            f'reachable_ids: [1, 2, 3], city_name: "dummy-city", city_uuid: "dummy-city-uuid", '
-            f'region: "dummy-region", location: point({{ longitude: 0.0, latitude: 0.0 }}), '
-            f'service: "flixbus", station_uuid: "dummy-station-uuid", is_popular: false }} )'
+            'CREATE ( n:DummyNodeType { Id: 123, NodeType: "DummyNodeType", '
+            'ReachableIds: [1, 2, 3], CityName: "dummy_city", CityUuid: "dummy_city_uuid", '
+            'Region: "dummy_region", Location: point({ longitude: 0.0, latitude: 0.0 }), '
+            'Service: "dummy_service", StationUuid: "dummy_station_uuid", IsPopular: false } )'
         )
-        got_create_query = (
-            node.build_create_cypher_query(label) if label else node.build_create_cypher_query()
-        )
-        assert pytest.approx(expected_create_query) == pytest.approx(got_create_query)
+
+        actual_create_query = self.dummy_bus_station_node.cypher_create_query
+        assert pytest.approx(actual_create_query) == pytest.approx(expected_create_query)
 
 
 class TestNodeRelationShip(unittest.TestCase):
@@ -229,23 +214,23 @@ class TestNodeRelationShip(unittest.TestCase):
         relationship = NodeRelationshipFactory()
         self.assertIsInstance(relationship, NodeRelationShip)
 
-        self.assertIsInstance(relationship.relation_name, str)
+        self.assertIsInstance(relationship.relation_type, str)
         self.assertIsInstance(relationship.travel_mode, str)
         self.assertIsInstance(relationship.schedules, (list, type(None)))
         if relationship.schedules is not None:
             self.assertTrue(all(isinstance(i, datetime.datetime) for i in relationship.schedules))
-        self.assertIsInstance(relationship.average_price, float)
+        self.assertIsInstance(relationship.average_price, Price)
 
-    def test_valid_cypher_repr(self):
+    def test_valid_cypher_core_str(self):
         relationship = self.dummy_node_relationship
-        cypher_relationship = (
-            'relation_name: "dummy-relation-name", '
-            'travel_mode: "bus", '
-            'schedules: [datetime("2023-01-01T00:00:00.000000")], '
-            "average_duration: { hours: 1, minutes: 15 }, "
-            "average_price: 0.0"
+        expected_relationship_cypher_str = (
+            # 'relation_type: "DUMMY_RELATION_TYPE", '
+            'TravelMode: "bus", '
+            'Schedules: [datetime("2023-01-01T00:00:00.000000")], '
+            "AverageDuration: duration({ hours: 1, minutes: 15 }), "
+            'AveragePrice: "0.0 USD"'
         )
-        assert pytest.approx(str(relationship)) == pytest.approx(cypher_relationship)
+        assert pytest.approx(str(relationship)) == pytest.approx(expected_relationship_cypher_str)
 
     def test_invalid_name_type(self):
         with self.assertRaises(ValidationError):

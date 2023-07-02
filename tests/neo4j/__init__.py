@@ -23,7 +23,7 @@ import pytz
 from factory import Factory, Faker, LazyAttribute, List, SubFactory
 from factory.fuzzy import FuzzyDate, FuzzyDateTime
 
-from neo4j_graph import BusStationNode, Location, Neo4JConn, Node, NodeRelationShip
+from neo4j_graph import BusStationNode, Currency, Location, Neo4JConn, Node, NodeRelationShip, Price
 
 
 class LocationFactory(Factory):
@@ -48,6 +48,7 @@ class BusStationNodeFactory(Factory):
         model = BusStationNode
 
     id = LazyAttribute(lambda _: random.randint(0, 100))
+    # node_type = "BusStation"
     city_name = Faker("city")
     city_uuid = Faker("uuid4")
     region = Faker("country")
@@ -68,6 +69,14 @@ def random_datetimes(cant: int = None):
     return fdt.evaluate(computed_attr, None, None)
 
 
+class PriceFactory(Factory):
+    class Meta:
+        model = Price
+
+    amount = LazyAttribute(lambda _: round(random.random(), 2) * 100)
+    currency = Currency.USD
+
+
 class NodeRelationshipFactory(Factory):
     class Meta:
         model = NodeRelationShip
@@ -75,7 +84,7 @@ class NodeRelationshipFactory(Factory):
     # relation_name = "CAN_TRANSFER_TO"
     # service = "flixbus"
     schedules = List([random_datetimes() for _ in range(1, 3)])
-    average_price = LazyAttribute(lambda _: round(random.random(), 2) * 100)
+    average_price = SubFactory(PriceFactory)
 
 
 class Neo4JConnFactory(Factory):
