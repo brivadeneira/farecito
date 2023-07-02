@@ -7,7 +7,16 @@ import unittest
 import pytest
 from pydantic import ValidationError
 
-from neo4j_graph import BusStationNode, Currency, Location, Neo4JConn, NodeRelationShip, Price
+from neo4j_graph import (
+    BusStationNode,
+    Currency,
+    Location,
+    Neo4JConn,
+    Node,
+    NodeRelationShip,
+    Price,
+    UnstructuredGraph,
+)
 from tests.neo4j import (
     BusStationNodeFactory,
     LocationFactory,
@@ -15,6 +24,7 @@ from tests.neo4j import (
     NodeFactory,
     NodeRelationshipFactory,
     PriceFactory,
+    UnstructuredGraphFactory,
 )
 
 
@@ -239,6 +249,59 @@ class TestNodeRelationShip(unittest.TestCase):
     def test_invalid_region_type(self):
         with self.assertRaises(ValidationError):
             BusStationNodeFactory(region=3.141)
+
+
+class TestUnstructuredGraph(unittest.TestCase):
+    @pytest.fixture(autouse=True)
+    def __inject_fixtures(
+        self, dummy_graph, dummy_node_relationship, dummy_node, dummy_bus_station_node
+    ):
+        self.dummy_graph = dummy_graph
+        self.dummy_node_relationship = dummy_node_relationship
+        self.dummy_node = dummy_node
+        self.dummy_bus_station_node = dummy_bus_station_node
+
+    def test_neo4j_unstructured_graph(self):
+        graph = UnstructuredGraphFactory()
+        self.assertIsInstance(graph, UnstructuredGraph)
+
+        self.assertTrue(all(issubclass(type(node), Node) for node in graph.nodes))
+        if graph.relationship:
+            self.assertIsInstance(graph.relationship, NodeRelationShip)
+
+    def test_create_nodes_query(self):
+        graph = self.dummy_graph
+        expected_query = (
+            "FOREACH (node IN ["
+            '{ Id: 1, NodeType: "dummy_node_type", ReachableIds: [2, 3] }, '
+            '{ Id: 2, NodeType: "dummy_node_type", ReachableIds: [1, 3] }, '
+            '{ Id: 3, NodeType: "dummy_node_type", ReachableIds: [1, 2] }'
+            "] | MERGE (n: DummyNodeType "
+            "{ Id: node.Id, NodeType: node.NodeType, ReachableIds: node.ReachableIds }"
+            "))"
+        )
+
+        assert pytest.approx(graph.create_nodes_query) == pytest.approx(expected_query)
+
+    def test_different_nodes_class(self):
+        with self.assertRaises(ValidationError):
+            UnstructuredGraphFactory(nodes={}, relationship=self.dummy_node_relationship)
+
+    def test_invalid_nodes_properties(self):
+        with self.assertRaises(ValidationError):
+            UnstructuredGraphFactory(
+                nodes=[self.dummy_node, self.dummy_bus_station_node],
+                relationship=self.dummy_node_relationship,
+            )
+
+    def test_invalid_node_type_value(self):
+        with self.assertRaises(ValidationError):
+            a_node = NodeFactory(id=1, node_type="dummy_node_type")
+            another_node = NodeFactory(id=2, node_type="another_dummy_node_type")
+
+            UnstructuredGraphFactory(
+                nodes=[a_node, another_node], relationship=self.dummy_node_relationship
+            )
 
 
 class TestNeo4JConn(unittest.TestCase):

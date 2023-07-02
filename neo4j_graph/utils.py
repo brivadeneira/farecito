@@ -3,7 +3,7 @@ import datetime
 import itertools
 from typing import Iterable
 
-from camel_converter import to_camel
+from pydantic.utils import to_camel
 
 
 def date_time_to_cypher_conversion(date_time_object: datetime.datetime | datetime.timedelta) -> str:
@@ -81,5 +81,6 @@ def snake_to_upper_camel(snake_str: str) -> str:
     """
     if not snake_str:
         return ""
-    camel_label = to_camel(snake_str)
-    return f"{camel_label[0].upper()}{camel_label[1:]}"
+    if "_" not in snake_str:
+        return f"{snake_str[0].upper()}{snake_str[1:]}"
+    return to_camel(snake_str)

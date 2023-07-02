@@ -15,18 +15,19 @@ from __future__ import annotations
 
 import asyncio
 import datetime
+import itertools
 import logging
 import uuid
 from dataclasses import is_dataclass
-from typing import List, TypeVar
+from typing import Any, List, TypeVar
 
 from neo4j import AsyncGraphDatabase
 from neo4j.exceptions import AuthError, DatabaseError, DriverError, Forbidden
-from pydantic import StrictStr, ValidationError
+from pydantic import StrictStr, validator
 from pydantic.dataclasses import dataclass
+from settings import APP_NAME, SLEEP_TIME
 
 from neo4j_graph.utils import get_cypher_core_data_type, snake_to_upper_camel
-from settings import APP_NAME, SLEEP_TIME
 
 logger = logging.getLogger(APP_NAME)
 logger.setLevel(logging.DEBUG)
@@ -202,6 +203,52 @@ class NodeRelationShip(Neo4jBase):
         self.relation_type = self.relation_type.upper().replace("-", "_")
 
 
+@dataclass
+class UnstructuredGraph:
+    """
+    A minimalist way of temporary store homogeneous nodes and their relationships,
+    in order to make checks and build cypher queries for all of them at once.
+    """
+
+    nodes: list[Any]
+    relationship: NodeRelationShip = None
+
+    @validator("nodes")
+    def validate_nodes(cls, nodes):
+        """
+        Validate all nodes are a subclass of Node
+        and check for all of their properties and node_type that must be the same
+        """
+        if not all(issubclass(type(node), Node) for node in nodes):
+            raise TypeError("Wrong type for 'nodes', must be subclass of Node")
+        for a_node, another_node in itertools.combinations(nodes, 2):
+            if not a_node.node_properties == another_node.node_properties:
+                raise ValueError("Nodes must have the same properties")
+            if not a_node.node_type == another_node.node_type:
+                raise ValueError("Nodes must have the same node_type value")
+        return nodes
+
+    @property
+    def create_nodes_query(self) -> str:
+        """
+        Builds the cypher query for create multiple nodes at once, ready for run.
+        Nodes must have the same properties and 'node_type' attribute
+        """
+
+        if len(self.nodes) == 1:
+            [node] = self.nodes
+            return node.cypher_create_query
+
+        cypher_node_core_str = [str(node) for node in self.nodes]
+        node_ref = self.nodes[0]
+        node_type, cypher_node_properties = node_ref.node_type, node_ref.cypher_node_properties
+
+        return (
+            f"FOREACH (node IN [{{ {' }, { '.join(cypher_node_core_str)} }}] "
+            f"| MERGE (n: {snake_to_upper_camel(node_type)} {{ {cypher_node_properties} }}))".strip()
+        )
+
+
 AsyncDriverType = TypeVar("neo4j.AsyncDriver")
 
 
@@ -228,11 +275,14 @@ class Neo4JConn:
         except DriverError as ex:
             logging.error(f"A node4j driver exception appeared: {ex}")
 
-    def __post_init__(self):
-        if not isinstance(self.uri, str):
-            # TODO, fix this! For some reason pydantic is not validating this
-            raise TypeError(f"neo4jconn uri must be a str not {type(self.uri)}")
+    @validator("uri")
+    def validate_nodes(cls, uri):
+        # TODO, fix this! For some reason pydantic is not validating this
+        if not isinstance(uri, str):
+            raise TypeError(f"neo4jconn uri must be a str not {type(uri)}")
+        return uri
 
+    def __post_init__(self):
         self.auth = self.user_name, self.password
 
         if not self.async_driver:

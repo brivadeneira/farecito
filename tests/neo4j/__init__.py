@@ -23,7 +23,16 @@ import pytz
 from factory import Factory, Faker, LazyAttribute, List, SubFactory
 from factory.fuzzy import FuzzyDate, FuzzyDateTime
 
-from neo4j_graph import BusStationNode, Currency, Location, Neo4JConn, Node, NodeRelationShip, Price
+from neo4j_graph import (
+    BusStationNode,
+    Currency,
+    Location,
+    Neo4JConn,
+    Node,
+    NodeRelationShip,
+    Price,
+    UnstructuredGraph,
+)
 
 
 class LocationFactory(Factory):
@@ -85,6 +94,14 @@ class NodeRelationshipFactory(Factory):
     # service = "flixbus"
     schedules = List([random_datetimes() for _ in range(1, 3)])
     average_price = SubFactory(PriceFactory)
+
+
+class UnstructuredGraphFactory(Factory):
+    class Meta:
+        model = UnstructuredGraph
+
+    nodes = List([SubFactory(NodeFactory) for _ in range(3)])
+    relationship = SubFactory(NodeRelationshipFactory)
 
 
 class Neo4JConnFactory(Factory):
