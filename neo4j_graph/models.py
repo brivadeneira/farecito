@@ -1,5 +1,8 @@
 # pylint: skip-file
 # TODO fix astroid-error
+# TODO define empty classes for errors
+# TODO add @staticmethod decorator in correspondant methods
+# TODO encapsulate methods when necessary
 """
 Implements classes for Neo4j-based data models.
 
@@ -25,7 +28,7 @@ from neo4j import AsyncGraphDatabase
 from neo4j.exceptions import AuthError, DatabaseError, DriverError, Forbidden
 from pydantic import StrictStr, validator
 from pydantic.dataclasses import dataclass
-from settings import APP_NAME, SLEEP_TIME
+from settings import APP_NAME
 
 from neo4j_graph.utils import get_cypher_core_data_type, snake_to_upper_camel
 
@@ -291,7 +294,7 @@ class Neo4JConn:
     async def _close_driver(self):
         await self.async_driver.close()
 
-    async def execute_query(self, query: str, sleep_time: int = SLEEP_TIME):
+    async def execute_query(self, query: str, sleep_time: int = 60):
         """
         Execute an async given neo4j_graph query
         :param query: (str) a valid neo4j_graph query to be executed

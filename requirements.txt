@@ -1,3 +1,4 @@
 neo4j==5.9.0
 pydantic==1.10.9
 python-dotenv==1.0.0
+requests==2.31.0

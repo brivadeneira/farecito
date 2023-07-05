@@ -84,3 +84,11 @@ def snake_to_upper_camel(snake_str: str) -> str:
     if "_" not in snake_str:
         return f"{snake_str[0].upper()}{snake_str[1:]}"
     return to_camel(snake_str)
+
+
+# TODO move next func to a more accurate place
+def get_popular_nodes_cypher_query() -> str:
+    """
+
+    :return:
+    """
