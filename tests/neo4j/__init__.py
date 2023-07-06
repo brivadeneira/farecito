@@ -11,11 +11,8 @@ Classes:
 - LocationFactory: Factory for generating fake Location instances.
 - Neo4JNodeFactory: Factory for generating fake Neo4JNode instances.
 - Neo4JConnFactory: Factory for generating fake Neo4JConn instances.
-
-Note: The factories rely on the 'factory' library
-and the 'Faker' class from the 'factory.Faker' module.
-Make sure to install the required dependencies before using the factories.
 """
+
 import datetime
 import random
 
