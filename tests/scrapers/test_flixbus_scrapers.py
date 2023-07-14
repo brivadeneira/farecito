@@ -45,6 +45,7 @@ class TestrFlixbusBusStationsParser(unittest.TestCase):
         flixbus_parser = FlixbusBusStationsParserFactory(scraped_data=self.data_to_parse)
         self.assertIsInstance(flixbus_parser, FlixbusBusStationsParser)
         parsed_data = flixbus_parser.parse_data()
+
         self.assertIsInstance(parsed_data, list)
         expected_keys = {"location", "search_volume", "reachable", "name", "id", "uuid", "region"}
         self.assertTrue(set(item.keys) == expected_keys for item in parsed_data)

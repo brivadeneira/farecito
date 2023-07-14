@@ -23,7 +23,7 @@ class FlixbusBusStationsScraper(BaseScraper):
         self.endpoint_uri = "https://d1ioiftasz4l3w.cloudfront.net/cities_v2/_search"
 
     @validator("region")
-    def validate_region(self, region):
+    def validate_region(cls, region):
         """
         Validate region value according to region ISO code
         """
