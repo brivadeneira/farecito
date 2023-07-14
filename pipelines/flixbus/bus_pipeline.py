@@ -6,15 +6,14 @@ from typing import Any
 
 from pydantic.dataclasses import dataclass
 
-from neo4j_graph import BusStationNode, Location, Neo4JConn, UnstructuredGraph
-from pipelines.models import BaseDataPipeline
-from pipelines.settings import NEO4J_DB, NEO4J_PASSWORD, NEO4J_URI, NEO4J_USERNAME
+from neo4j_graph import BusStationNode, Location, UnstructuredGraph
+from pipelines import BaseDataLoader, BaseDataProcessor
 
 
 @dataclass
-class FlixbusBusStationsDataPipeline(BaseDataPipeline):
+class FlixbusBusStationsDataProcessor(BaseDataProcessor):
     """
-    Base class for cleaning, validate and store items from scrapers
+    Base class for cleaning and validate flixbus bus stations (cities)
     """
 
     ranking_size: int = 20  # determine the size of most searched stations ranking (cities)
@@ -22,12 +21,6 @@ class FlixbusBusStationsDataPipeline(BaseDataPipeline):
 
     def __post_init__(self):
         self.mandatory_fields = ["id", "name", "uuid", "location", "search_volume", "reachable"]
-
-    @property
-    def neo4j_conn(self):
-        return Neo4JConn(
-            uri=NEO4J_URI, user_name=NEO4J_USERNAME, password=NEO4J_PASSWORD, db_name=NEO4J_DB
-        )
 
     def process_items(self):
         """
@@ -72,13 +65,26 @@ class FlixbusBusStationsDataPipeline(BaseDataPipeline):
 
         return processed_items
 
-    async def store_items(self, processed_items: list[dict[str, Any]]):
+
+@dataclass
+class FlixbusBusStationsDataLoader(BaseDataLoader):
+    """
+    Base class for store items after being clean and validated from scrapers
+    """
+
+    processed_data: list[Any]
+    conn: Any = None
+
+    async def load_items(self):
         """
-        Stores items into the correspondant data repository
+        Stores items into a neo4j graph instance by chunks
         """
-        queries = []
+
+        processed_items = self.processed_items
         chunk_size = self.chunk_size
-        conn = self.neo4j_conn
+        conn = self.conn
+
+        queries = []
 
         chunks = [
             processed_items[i : i + chunk_size] for i in range(0, len(processed_items), chunk_size)

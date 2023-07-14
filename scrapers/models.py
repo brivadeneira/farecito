@@ -9,6 +9,7 @@ Classes:
 
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 from typing import Any
 
 from fake_useragent import UserAgent
@@ -118,13 +119,14 @@ class BaseScraper:
 
 
 @dataclass
-class BaseParser:
+class BaseParser(ABC):
     """
     Base class for a parser of scraped data
     """
 
     scraped_data: Any
 
+    @abstractmethod
     def parse_data(self):
         """
         Parse scraped data, to be transformed into items

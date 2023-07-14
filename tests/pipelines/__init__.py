@@ -6,15 +6,21 @@ to create instances of scrapers models
 The factories make use of the 'Faker' class to generate realistic
 fake data for attributes of the models.
 
-Classes:
-- FlixbusBusStationsDataPipelineFactory: Factory for generating fake Pipeline instances.
 """
 
 from factory import Factory
 
-from pipelines.flixbus.bus_pipeline import FlixbusBusStationsDataPipeline
+from pipelines.flixbus.bus_pipeline import (
+    FlixbusBusStationsDataLoader,
+    FlixbusBusStationsDataProcessor,
+)
 
 
-class FlixbusBusStationsDataPipelineFactory(Factory):
+class FlixbusBusStationsDataProcessorFactory(Factory):
     class Meta:
-        model = FlixbusBusStationsDataPipeline
+        model = FlixbusBusStationsDataProcessor
+
+
+class FlixbusBusStationsDataLoaderFactory(Factory):
+    class Meta:
+        model = FlixbusBusStationsDataLoader
