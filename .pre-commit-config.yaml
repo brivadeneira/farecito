@@ -54,7 +54,8 @@ repos:
                --disable=unused-private-member,  # W0238: Test classes
                --disable=attribute-defined-outside-init,  # idem below
                --disable=redefined-outer-name,  # W0621: test fixtures are injecting from out of the scope
-          ]
+               --disable=pointless-string-statement  # for allowing temporary draft code
+      ]
 
   - repo: https://github.com/PyCQA/autoflake
     rev: v2.1.1

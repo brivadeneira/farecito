@@ -18,7 +18,7 @@ import random
 
 import pytz
 from factory import Factory, Faker, LazyAttribute, List, SubFactory
-from factory.fuzzy import FuzzyDate, FuzzyDateTime
+from factory.fuzzy import FuzzyDateTime
 
 from neo4j_graph import (
     BusStationNode,

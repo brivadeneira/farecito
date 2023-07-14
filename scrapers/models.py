@@ -28,11 +28,17 @@ class BaseScraper:
     Base class for getting data via http requests
     """
 
-    endpoint_uri: str = ""
+    endpoint_uri: str = None
     retries: int = 3
     backoff: float = 0.3
     status_forcelist: tuple = (500, 502, 503, 504)
     timeout: int = 120
+
+    def __post_init__(self):
+        # TODO, fix this! For some reason pydantic is not validating this
+        if self.endpoint_uri:
+            if not isinstance(self.endpoint_uri, str):
+                raise TypeError(f"endpoint_uri must be a str {type(self.endpoint_uri)}")
 
     @property
     def requests_retry_session(self):
