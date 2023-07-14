@@ -123,7 +123,7 @@ class BaseParser:
     Base class for a parser of scraped data
     """
 
-    scraped_data: list[dict[Any, Any]]
+    scraped_data: Any
 
     def parse_data(self):
         """

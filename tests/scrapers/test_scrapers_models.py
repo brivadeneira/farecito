@@ -58,3 +58,7 @@ class TestBaseScraper(unittest.TestCase):
         session_mock.assert_called_once()
         session_instance_mock.mount.assert_called_with('https://', http_adapter_instance_mock)
     """
+
+
+if __name__ == "__main__":
+    unittest.main()
