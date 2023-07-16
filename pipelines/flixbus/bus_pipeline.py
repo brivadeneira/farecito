@@ -6,8 +6,9 @@ from typing import Any
 
 from pydantic.dataclasses import dataclass
 
-from neo4j_graph import BusStationNode, Location, UnstructuredGraph
+from neo4j_graph import BusStationNode, Location, Neo4JConn, UnstructuredGraph
 from pipelines import BaseDataLoader, BaseDataProcessor
+from pipelines.settings import NEO4J_PASSWORD, NEO4J_URI, NEO4J_USERNAME
 
 
 @dataclass
@@ -74,24 +75,38 @@ class FlixbusBusStationsDataLoader(BaseDataLoader):
 
     processed_data: list[Any]
     conn: Any = None
+    chunk_size: int = 100  # TODO research what is the best value
 
-    async def load_items(self):
-        """
-        Stores items into a neo4j graph instance by chunks
-        """
+    def __post_init__(self):
+        if not self.conn:
+            self.conn = Neo4JConn(
+                uri=NEO4J_URI,
+                user_name=NEO4J_USERNAME,
+                password=NEO4J_PASSWORD,
+            )
 
-        processed_items = self.processed_items
+    def build_cypher_queries(self) -> list[str]:
+        processed_data = self.processed_data
         chunk_size = self.chunk_size
-        conn = self.conn
 
         queries = []
 
         chunks = [
-            processed_items[i : i + chunk_size] for i in range(0, len(processed_items), chunk_size)
+            processed_data[i : i + chunk_size] for i in range(0, len(processed_data), chunk_size)
         ]
+
         for chunk in chunks:
             nodes = [BusStationNode(**item) for item in chunk]
             graph = UnstructuredGraph(nodes)
             queries.append(graph.create_nodes_query)
 
-        await asyncio.gather(*[conn.run_query(query) for query in queries])
+        return queries
+
+    async def load_items(self):
+        """
+        Stores items into a neo4j graph instance by chunks
+        """
+        conn = self.conn
+        queries = self.build_cypher_queries()
+
+        await asyncio.gather(*[conn.execute_query(query) for query in queries])

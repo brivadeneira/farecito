@@ -147,17 +147,16 @@ class Node(Neo4jBase):
         }
 
     @property
-    def cypher_node_properties(self) -> str:
+    def cypher_node_properties(self) -> list:
         """
         Builds a general cypher representation for node properties,
         useful for multiple nodes operations.
-        e.g. 'id: node.id, node_type: node.node_type'
+        e.g. ['Id', 'NodeType', 'ReachableIds', ...]
         :return:
         """
-        node_properties = [
+        return [
             snake_to_upper_camel(field_name) for field_name, _ in self.__dataclass_fields__.items()
         ]
-        return ", ".join(f"{prop}: node.{prop}" for prop in node_properties)
 
     @property
     def cypher_create_query(self) -> str:
@@ -237,6 +236,8 @@ class UnstructuredGraph:
         """
         Builds the cypher query for create multiple nodes at once, ready for run.
         Nodes must have the same properties and 'node_type' attribute
+        NOTE: All null values are going to be replaced with '' in case of MERGE
+        # TODO improve this treatment.
         """
 
         if len(self.nodes) == 1:
@@ -246,10 +247,11 @@ class UnstructuredGraph:
         cypher_node_core_str = [str(node) for node in self.nodes]
         node_ref = self.nodes[0]
         node_type, cypher_node_properties = node_ref.node_type, node_ref.cypher_node_properties
+        properties_set = ", ".join(f"{prop}: node.{prop}" for prop in cypher_node_properties)
 
         return (
             f"FOREACH (node IN [{{ {' }, { '.join(cypher_node_core_str)} }}] "
-            f"| MERGE (n: {snake_to_upper_camel(node_type)} {{ {cypher_node_properties} }}))".strip()
+            f"| MERGE (n: {snake_to_upper_camel(node_type)} {{ {properties_set} }}))".strip()
         )
 
 

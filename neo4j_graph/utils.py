@@ -51,7 +51,8 @@ def get_cypher_core_data_type(_obj: any) -> str:
     :return: (str) with the cypher representation of the object
     """
     if _obj is None:
-        return "Null"
+        return "''"  # "Null", for avoiding cypher error when creating multiple nodes
+        # TODO fix this!
     if isinstance(_obj, bool):
         return str(_obj).lower()
     if isinstance(_obj, (datetime.datetime, datetime.timedelta)):
