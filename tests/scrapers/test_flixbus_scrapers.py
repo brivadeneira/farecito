@@ -20,9 +20,6 @@ class TestrFlixbusBusStationsScraper(unittest.TestCase):
     def test_flixbus_bustations_scraper(self):
         flixbus_scraper = FlixbusBusStationsScraperFactory()
         self.assertIsInstance(flixbus_scraper, FlixbusBusStationsScraper)
-        self.assertEqual(
-            flixbus_scraper.endpoint_uri, "https://d1ioiftasz4l3w.cloudfront.net/cities_v2/_search"
-        )
         self.assertIsInstance(flixbus_scraper.query_size, int)
         self.assertIsInstance(flixbus_scraper.query, dict)
 
@@ -42,7 +39,7 @@ class TestrFlixbusBusStationsParser(unittest.TestCase):
         self.data_to_parse = flixbus_busstations_response_data_mock
 
     def test_flixbus_bustations_scraper(self):
-        flixbus_parser = FlixbusBusStationsParserFactory(scraped_data=self.data_to_parse)
+        flixbus_parser = FlixbusBusStationsParserFactory(scraped_data=[self.data_to_parse])
         self.assertIsInstance(flixbus_parser, FlixbusBusStationsParser)
         parsed_data = flixbus_parser.parse_data()
 

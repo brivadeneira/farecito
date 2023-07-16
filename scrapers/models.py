@@ -10,7 +10,6 @@ Classes:
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any
 
 from fake_useragent import UserAgent
 from pydantic.dataclasses import dataclass
@@ -29,17 +28,19 @@ class BaseScraper:
     Base class for getting data via http requests
     """
 
-    endpoint_uri: str = None
+    endpoint_uris: list[str]
     retries: int = 3
     backoff: float = 0.3
     status_forcelist: tuple = (500, 502, 503, 504)
     timeout: int = 120
 
     def __post_init__(self):
-        # TODO, fix this! For some reason pydantic is not validating this
-        if self.endpoint_uri:
-            if not isinstance(self.endpoint_uri, str):
-                raise TypeError(f"endpoint_uri must be a str {type(self.endpoint_uri)}")
+        if not all(((isinstance(uri, str)) for uri in self.endpoint_uris)):
+            raise TypeError("endpoint_uris must be str")
+        if not all(
+            (uri.startswith("https://") or uri.startswith("http://") for uri in self.endpoint_uris)
+        ):
+            raise TypeError("endpoint_uris must start with a valid schema: https:// or http://")
 
     @property
     def requests_retry_session(self):
@@ -77,45 +78,46 @@ class BaseScraper:
         """
         return {}
 
-    def get_data(self, method: str = "GET"):
+    def get_data(self, method: str = "GET") -> list[dict]:
         """
         Get data via http requests from an endpoint_url to be parsed, proceeded and stored
         using a retry session with custom retries, backoff factor and so on.
         :param method: 'GET' or 'POST', if not given GET will be implemented
-        :return: json representation of the data
+        :return: a list of json representation of the data
         """
 
-        if not self.endpoint_uri:
-            raise ValueError("a valid endpoint URI is mandatory")
+        if not any(self.endpoint_uris):
+            raise ValueError("at least a valid endpoint URI is mandatory")
 
         session = self.requests_retry_session
-        url = self.endpoint_uri
         timeout = self.timeout
         headers = self.build_headers()
         query = self.query
 
-        request_args = {
-            "url": url,
-            "headers": headers,
-            "json": query,
-            "timeout": timeout,
-            "allow_redirects": True,
-        }
+        scraped_data = []
 
-        try:
-            match method:
-                case "GET":
-                    response = session.get(**request_args)
-                case "POST":
-                    response = session.post(**request_args)
-        except Exception as ex:
-            raise RequestError(ex) from ex
+        for url in self.endpoint_uris:
+            request_args = {
+                "url": url,
+                "headers": headers,
+                "json": query,
+                "timeout": timeout,
+                "allow_redirects": True,
+            }
 
-        response.raise_for_status()
+            try:
+                match method:
+                    case "GET":
+                        response = session.get(**request_args)
+                    case "POST":
+                        response = session.post(**request_args)
+            except Exception as ex:
+                raise RequestError(ex) from ex
 
-        scraped_data = response.json()
+            response.raise_for_status()  # TODO make this loop resilient
+            scraped_data.append(response.json())
 
-        return self.parse_items(scraped_data)
+        return scraped_data
 
 
 @dataclass
@@ -124,7 +126,7 @@ class BaseParser(ABC):
     Base class for a parser of scraped data
     """
 
-    scraped_data: Any
+    scraped_data: list
 
     @abstractmethod
     def parse_data(self):

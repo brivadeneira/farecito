@@ -21,7 +21,7 @@ class TestBaseScraper(unittest.TestCase):
         base_scraper = BaseScraperFactory()
         self.assertIsInstance(base_scraper, BaseScraper)
 
-        self.assertIsInstance(base_scraper.endpoint_uri, str)
+        self.assertIsInstance(base_scraper.endpoint_uris, list)
         self.assertIsInstance(base_scraper.retries, int)
         self.assertIsInstance(base_scraper.backoff, float)
         self.assertIsInstance(base_scraper.status_forcelist, tuple)
@@ -30,7 +30,7 @@ class TestBaseScraper(unittest.TestCase):
 
     def test_invalid_endpoint_uri_value(self):
         with self.assertRaises(TypeError):
-            BaseScraperFactory(endpoint_uri=-3.1416)
+            BaseScraper(endpoint_uris=-3.1416)
 
     def test_build_headers(self):
         base_scraper = BaseScraperFactory()

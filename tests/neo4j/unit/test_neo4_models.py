@@ -130,13 +130,9 @@ class TestNode(unittest.TestCase):
         self.assertTrue(expected_properties == self.dummy_node.node_properties)
 
     def test_get_cypher_node_properties(self):
-        expected_cypher_properties = (
-            "Id: node.Id, NodeType: node.NodeType, ReachableIds: node.ReachableIds"
-        )
-        obtained_cypher_properties = self.dummy_node.cypher_node_properties
-        assert pytest.approx(expected_cypher_properties) == pytest.approx(
-            obtained_cypher_properties
-        )
+        expected_properties = ["Id", "NodeType", "ReachableIds"]
+        obtained_properties = self.dummy_node.cypher_node_properties
+        assert set(expected_properties) == set(obtained_properties)
 
     def test_cypher_create_query(self):
         expected_create_query = (

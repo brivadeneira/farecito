@@ -20,7 +20,7 @@ class FlixbusBusStationsScraper(BaseScraper):
     query_size: int = 3000  # cities to get (all EU cities count around 2800)
 
     def __post_init__(self):
-        self.endpoint_uri = "https://d1ioiftasz4l3w.cloudfront.net/cities_v2/_search"
+        self.endpoint_uris = ["https://d1ioiftasz4l3w.cloudfront.net/cities_v2/_search"]
 
     @validator("region")
     def validate_region(cls, region):
@@ -97,7 +97,7 @@ class FlixbusBusStationsParser(BaseParser):
         """
         Gets the result of get_data() method, parses it to be proceeded and stored
         """
-        scraped_data = self.scraped_data
+        [scraped_data] = self.scraped_data
 
         city_items = []
 

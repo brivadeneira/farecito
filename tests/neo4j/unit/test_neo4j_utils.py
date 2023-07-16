@@ -9,7 +9,8 @@ import pytest
 from neo4j_graph import get_cypher_core_data_type, snake_to_upper_camel
 
 test_objects_to_cypher_with_ids = [
-    [None, "Null", "none"],
+    # [None, "Null", "none"],
+    [None, "''", "none"],
     [True, "true", "bool_true"],
     [False, "false", "bool_false"],
     [

@@ -20,12 +20,14 @@ class BaseScraperFactory(Factory):
     class Meta:
         model = BaseScraper
 
-    endpoint_uri = Faker("url")
+    endpoint_uris = ["http://dummy.url"]
 
 
 class FlixbusBusStationsScraperFactory(Factory):
     class Meta:
         model = FlixbusBusStationsScraper
+
+    endpoint_uris = ["http://dummy.url"]
 
 
 class FlixbusBusStationsParserFactory(Factory):
