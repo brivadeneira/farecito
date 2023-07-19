@@ -37,3 +37,18 @@ class BaseDataLoader(ABC):
         """
         Stores items into the correspondant data repository
         """
+
+
+@dataclass
+class BaseDataGetter(ABC):
+    """
+    Base class for store items after being clean and validated from scrapers
+    """
+
+    conn: Any = None
+
+    @abstractmethod
+    async def get_stored_data(self):
+        """
+        Stores items into the correspondant data repository
+        """

@@ -57,6 +57,9 @@ repos:
                --disable=pointless-string-statement,  # for allowing temporary draft code
                --disable=no-self-argument,  # incompatible with cls arg in pydantic validation
                --disable=too-many-locals,
+               --disable=unexpected-keyword-arg,  # bug when heritage
+               --disable=too-many-arguments,
+               --disable=missing-timeout,
       ]
 
   - repo: https://github.com/PyCQA/autoflake
