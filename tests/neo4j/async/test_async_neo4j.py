@@ -23,6 +23,7 @@ class Neo4jConnTests(IsolatedAsyncioTestCase):
             neo4j_conn.uri,
             auth=(neo4j_conn.user_name, neo4j_conn.password),
             database=neo4j_conn.db_name,
+            max_connection_lifetime=200,
         )
 
     @pytest.mark.asyncio
@@ -34,6 +35,7 @@ class Neo4jConnTests(IsolatedAsyncioTestCase):
             neo4j_conn.uri,
             auth=(neo4j_conn.user_name, neo4j_conn.password),
             database=neo4j_conn.db_name,
+            max_connection_lifetime=200,
         )
         self.assertEqual(driver_mock.call_count, 2)
 
@@ -48,6 +50,7 @@ class Neo4jConnTests(IsolatedAsyncioTestCase):
             neo4j_conn.uri,
             auth=(neo4j_conn.user_name, neo4j_conn.password),
             database=neo4j_conn.db_name,
+            max_connection_lifetime=200,
         )
 
         driver_mock = driver_cls_mock.return_value  # driver()

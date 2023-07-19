@@ -6,7 +6,7 @@ import unittest
 import pytest
 from pydantic import ValidationError
 
-from pipelines.flixbus.bus_pipeline import (
+from pipelines.flixbus.bus_stations_pipeline import (
     FlixbusBusStationsDataLoader,
     FlixbusBusStationsDataProcessor,
 )

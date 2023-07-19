@@ -13,7 +13,11 @@ Classes:
 from factory import Factory, Faker
 
 from scrapers import BaseScraper
-from scrapers.flixbus.bus_scraper import FlixbusBusStationsParser, FlixbusBusStationsScraper
+from scrapers.flixbus.bus_stations_scraper import (
+    FlixbusBusStationsParser,
+    FlixbusBusStationsScraper,
+)
+from scrapers.flixbus.trips_scraper import FlixbusTripsScraper
 
 
 class BaseScraperFactory(Factory):
@@ -28,6 +32,13 @@ class FlixbusBusStationsScraperFactory(Factory):
         model = FlixbusBusStationsScraper
 
     endpoint_uris = ["http://dummy.url"]
+
+
+class FlixbusTripsScraperFactory(Factory):
+    class Meta:
+        model = FlixbusTripsScraper
+
+    endpoint_uris = None
 
 
 class FlixbusBusStationsParserFactory(Factory):

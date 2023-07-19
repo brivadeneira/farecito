@@ -56,6 +56,7 @@ repos:
                --disable=redefined-outer-name,  # W0621: test fixtures are injecting from out of the scope
                --disable=pointless-string-statement,  # for allowing temporary draft code
                --disable=no-self-argument,  # incompatible with cls arg in pydantic validation
+               --disable=too-many-locals,
       ]
 
   - repo: https://github.com/PyCQA/autoflake

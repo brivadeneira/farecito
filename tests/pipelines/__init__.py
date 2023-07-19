@@ -10,7 +10,7 @@ fake data for attributes of the models.
 
 from factory import Factory
 
-from pipelines.flixbus.bus_pipeline import (
+from pipelines.flixbus.bus_stations_pipeline import (
     FlixbusBusStationsDataLoader,
     FlixbusBusStationsDataProcessor,
 )

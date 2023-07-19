@@ -25,8 +25,8 @@ from dataclasses import is_dataclass
 from typing import Any, List, TypeVar
 
 from neo4j import AsyncGraphDatabase
-from neo4j.exceptions import AuthError, DatabaseError, DriverError, Forbidden
-from pydantic import StrictStr, validator
+from neo4j.exceptions import AuthError, DatabaseError, DriverError, Forbidden, TransientError
+from pydantic import BaseModel, StrictStr, validator
 from pydantic.dataclasses import dataclass
 
 from neo4j_graph.utils import get_cypher_core_data_type, snake_to_upper_camel
@@ -75,15 +75,20 @@ class Location:
     latitude: float | int
     longitude: float | int
 
-    def __post_init__(self):
-        if self.latitude < -90 or self.latitude > 90:
+    @validator("latitude")
+    def validate_latitude(cls, latitude):
+        if latitude < -90 or latitude > 90:
             raise ValueError("latitude must be between -90 and 90")
+        return latitude
 
-        if self.longitude < -180 or self.longitude > 180:
+    @validator("longitude")
+    def validate_longitude(cls, longitude):
+        if longitude < -180 or longitude > 180:
             raise ValueError("longitude must be between -180 and 180")
+        return longitude
 
     def __str__(self):
-        return f"point({{ longitude: {self.longitude}, latitude: {self.longitude} }})"
+        return f"point({{ longitude: {self.longitude}, latitude: {self.latitude} }})"
 
 
 @dataclass
@@ -111,7 +116,7 @@ class Neo4jBase:
         """
         items_as_str = []
         for field_name, field_def in self.__dataclass_fields__.items():
-            if field_name == "relation_type":
+            if field_name in ["relation_type", "src_node_ids", "dst_node_ids"]:
                 # Avoid NodeRelationShip attribute
                 # TODO improve this
                 continue
@@ -196,6 +201,8 @@ class NodeRelationShip(Neo4jBase):
     like class based on Neo4jBase
     """
 
+    src_node_ids: list[int] = None
+    dst_node_ids: list[int] = None
     relation_type: StrictStr = "CAN_TRANSFER_TO"
     travel_mode: StrictStr = "bus"
     schedules: List[datetime.datetime] = None
@@ -204,6 +211,46 @@ class NodeRelationShip(Neo4jBase):
 
     def __post_init__(self):
         self.relation_type = self.relation_type.upper().replace("-", "_")
+
+    @property
+    def cypher_str(self):
+        return f"[r:{self.relation_type} {{ {str(self)} }}]"
+
+    def create_single_node_relationships(self) -> str:
+        dst_node_ids = self.dst_node_ids
+
+        reachable_ids = str(dst_node_ids) if dst_node_ids else "a.ReachableIds"
+
+        [src_node_id] = self.src_node_ids
+        return f"""
+        MATCH (a {{ Id: {src_node_id} }}), (new_connections)
+        WHERE a <> new_connections
+        AND new_connections.Id IN {reachable_ids} WITH a,
+        COLLECT(new_connections) as conn FOREACH (b IN conn
+        | MERGE (a)-{self.cypher_str}->(b))
+        """.strip()
+
+    def create_multiple_node_relationships(self) -> str:
+        src_node_ids = self.src_node_ids
+
+        return f"""
+        WITH {str(src_node_ids)} AS node_ids
+        UNWIND node_ids AS node_id MATCH (a {{Id: node_id}}),
+        (new_connections) WHERE a <> new_connections
+        AND new_connections.Id IN a.ReachableIds WITH a,
+        COLLECT(new_connections) as conn
+        FOREACH (b IN conn | MERGE (a)-{self.cypher_str}->(b))
+        """.strip()
+
+    @property
+    def create_relationship_query(self) -> str:
+        if not self.src_node_ids:
+            raise ValueError("At least a src_node_id is needed.")
+
+        if len(self.src_node_ids) == 1:
+            return self.create_single_node_relationships()
+
+        return self.create_multiple_node_relationships()
 
 
 @dataclass
@@ -276,7 +323,7 @@ class Neo4JConn:
     def init_driver(self):
         try:
             self.async_driver = AsyncGraphDatabase.driver(
-                self.uri, auth=self.auth, database=self.db_name
+                self.uri, auth=self.auth, database=self.db_name, max_connection_lifetime=200
             )
         except DriverError as ex:
             logging.error(f"A node4j driver exception appeared: {ex}")
@@ -312,9 +359,11 @@ class Neo4JConn:
                 if data:
                     logger.debug(f"[{trace_uuid}] The data result for the query was: {data}")
                 return data
-        except (AuthError, Forbidden, DatabaseError, DriverError) as ex:
+        except (AuthError, Forbidden, DatabaseError, DriverError, TransientError) as ex:
             logging.error(f"[{trace_uuid}] A node4j exception appeared: {ex}")
-            await self.close_driver()
+            await self._close_driver()
             await asyncio.sleep(sleep_time)
             self.init_driver()
-            await self.run_query(query)
+            await self.execute_query(query)
+        except Exception as ex:
+            logging.error(f"[{trace_uuid}] A node4j exception appeared: {ex}")

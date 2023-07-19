@@ -5,7 +5,10 @@ import unittest
 
 import pytest
 
-from scrapers.flixbus.bus_scraper import FlixbusBusStationsParser, FlixbusBusStationsScraper
+from scrapers.flixbus.bus_stations_scraper import (
+    FlixbusBusStationsParser,
+    FlixbusBusStationsScraper,
+)
 from tests.scrapers import FlixbusBusStationsParserFactory, FlixbusBusStationsScraperFactory
 
 

@@ -49,7 +49,7 @@ class TestPrice(unittest.TestCase):
             PriceFactory(amount=-3.1416)
 
     def test_invalid_amount_type(self):
-        with self.assertRaises(TypeError):
+        with self.assertRaises(ValidationError):
             PriceFactory(amount="1,000")
 
     def test_invalid_currency_type(self):
@@ -86,12 +86,12 @@ class TestLocation(unittest.TestCase):
             LocationFactory(longitude=-200)
 
     def test_invalid_latitude_type(self):
-        with self.assertRaises(TypeError):
-            LocationFactory(latitude="90")
+        with self.assertRaises(ValidationError):
+            LocationFactory(latitude="100")
 
     def test_invalid_longitude_type(self):
-        with self.assertRaises(TypeError):
-            LocationFactory(longitude="180")
+        with self.assertRaises(ValidationError):
+            LocationFactory(longitude="-200")
 
 
 class TestNode(unittest.TestCase):

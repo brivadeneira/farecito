@@ -91,7 +91,7 @@ class FlixbusBusStationsScraper(BaseScraper):
 
 @dataclass
 class FlixbusBusStationsParser(BaseParser):
-    region: str
+    region: str = "EU"
 
     def parse_data(self) -> list[Any]:
         """

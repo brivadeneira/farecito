@@ -88,8 +88,33 @@ def snake_to_upper_camel(snake_str: str) -> str:
 
 
 # TODO move next func to a more accurate place
-def get_popular_nodes_cypher_query() -> str:
+def get_popular_cities_cypher_query(region: str = "EU") -> str:
+    """
+    Query for look for all city_uuid popular cities,
+    and its reachable cities uuids,
+    useful for popular trips discounts scraper
+    :return: The cypher query ready to run.
     """
 
-    :return:
-    """
+    return f"""
+    MATCH (n:BusStation)
+    WHERE n.IsPopular
+    WHERE n.Region={region}
+    WITH n.CityUuid AS from_city_uuid, n.ReachableIds AS reachableIds
+    MATCH (m:BusStation)
+    WHERE m.Id IN reachableIds
+    RETURN from_city_uuid, COLLECT(DISTINCT m.CityUuid) AS to_city_uuid
+    """.strip()
+
+
+def get_nodes_cypher_query(region: str = "EU", properties: list[str] = None) -> str:
+    # TODO add tests for this func
+    if not isinstance(properties, list):
+        raise ValueError(f"properties must be a list of str, not {type(properties)}")
+    if not all((isinstance(prop, str) for prop in properties)):
+        raise ValueError("properties must be str")
+
+    upper_properties = [f"n.{snake_to_upper_camel(prop)}" for prop in properties]
+
+    return_prop = ", ".join(upper_properties)
+    return f"MATCH(n) WHERE n.Region='{region}' RETURN {return_prop}".strip()

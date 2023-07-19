@@ -10,6 +10,7 @@ Classes:
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from typing import Any
 
 from fake_useragent import UserAgent
 from pydantic.dataclasses import dataclass
@@ -28,19 +29,23 @@ class BaseScraper:
     Base class for getting data via http requests
     """
 
-    endpoint_uris: list[str]
+    endpoint_uris: Any = None  # TODO fix this, list[str] | Generator = None
     retries: int = 3
     backoff: float = 0.3
     status_forcelist: tuple = (500, 502, 503, 504)
     timeout: int = 120
 
     def __post_init__(self):
-        if not all(((isinstance(uri, str)) for uri in self.endpoint_uris)):
-            raise TypeError("endpoint_uris must be str")
-        if not all(
-            (uri.startswith("https://") or uri.startswith("http://") for uri in self.endpoint_uris)
-        ):
-            raise TypeError("endpoint_uris must start with a valid schema: https:// or http://")
+        if self.endpoint_uris is not None:
+            if not all(((isinstance(uri, str)) for uri in self.endpoint_uris)):
+                raise TypeError("endpoint_uris must be str")
+            if not all(
+                (
+                    uri.startswith("https://") or uri.startswith("http://")
+                    for uri in self.endpoint_uris
+                )
+            ):
+                raise TypeError("endpoint_uris must start with a valid schema: https:// or http://")
 
     @property
     def requests_retry_session(self):
@@ -76,7 +81,6 @@ class BaseScraper:
         Builds a custom query to be used getting data
         :return: (dict) with a custom query
         """
-        return {}
 
     def get_data(self, method: str = "GET") -> list[dict]:
         """
@@ -100,10 +104,12 @@ class BaseScraper:
             request_args = {
                 "url": url,
                 "headers": headers,
-                "json": query,
                 "timeout": timeout,
                 "allow_redirects": True,
             }
+
+            if query:
+                request_args["json"] = query
 
             try:
                 match method:
