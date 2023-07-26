@@ -13,9 +13,6 @@ from flixbus_trips_alerts import get_flixbus_trips
 
 nest_asyncio.apply()
 
-# for region in ["US", "EU", "BRA"]:
-# TODO: this must be a cron
-# asyncio.run(load_flixbus_cities(region=region))
-
-while True:
-    asyncio.run(get_flixbus_trips(region="EU"))
+if __name__ == "__main__":
+    # load_flixbus_cities(region=region)
+    asyncio.run(get_flixbus_trips())

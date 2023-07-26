@@ -1,12 +1,17 @@
 """
 Implements flixbus bus trips web scraping
 """
+import logging
 from typing import Any
 
 from pydantic import validator
 from pydantic.dataclasses import dataclass
 
 from scrapers import BaseParser, BaseScraper
+from settings import APP_NAME
+
+logger = logging.getLogger(APP_NAME)
+logger.setLevel(logging.DEBUG)
 
 
 @dataclass
@@ -105,7 +110,7 @@ class FlixbusBusStationsParser(BaseParser):
             try:
                 source = hit["_source"]
             except KeyError:
-                # TODO log malformed hit
+                logging.error("Malformed hit %s", hit)
                 continue
 
             item_data = [

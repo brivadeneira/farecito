@@ -12,7 +12,7 @@ from scrapers.flixbus.bus_stations_scraper import (
 from tests.scrapers import FlixbusBusStationsParserFactory, FlixbusBusStationsScraperFactory
 
 
-class TestrFlixbusBusStationsScraper(unittest.TestCase):
+class TestFlixbusBusStationsScraper(unittest.TestCase):
     """
     @pytest.fixture(autouse=True)
     def __inject_fixtures(self, mocker, dummy_uri):

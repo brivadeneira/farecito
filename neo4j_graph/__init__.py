@@ -6,5 +6,4 @@ Neo4J Graph provides models, utils and settings for:
 """
 
 from .models import *
-from .settings import *
 from .utils import *

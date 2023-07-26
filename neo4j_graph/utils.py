@@ -101,7 +101,7 @@ def get_popular_cities_cypher_query(region: str = "EU") -> str:
     WHERE n.Region='{region}' AND n.IsPopular
     WITH n.CityUuid AS from_city_uuid, n.ReachableIds AS reachableIds
     MATCH (m:BusStation)
-    WHERE m.Id IN reachableIds
+    WHERE m.CityUuid <> from_city_uuid AND m.IsPopular AND m.Id IN reachableIds
     RETURN from_city_uuid, COLLECT(DISTINCT m.CityUuid) AS to_city_uuids
     """.strip()
 

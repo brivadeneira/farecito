@@ -14,6 +14,8 @@ from pipelines.flixbus.bus_stations_pipeline import (
     FlixbusBusStationsDataLoader,
     FlixbusBusStationsDataProcessor,
 )
+from pipelines.flixbus.bus_trips_pipeline import FlixbusTripsTracker
+from pipelines.trip_alerts import TripsAlertBot
 
 
 class FlixbusBusStationsDataProcessorFactory(Factory):
@@ -24,3 +26,13 @@ class FlixbusBusStationsDataProcessorFactory(Factory):
 class FlixbusBusStationsDataLoaderFactory(Factory):
     class Meta:
         model = FlixbusBusStationsDataLoader
+
+
+class FlixbusTripsTrackerFactory(Factory):
+    class Meta:
+        model = FlixbusTripsTracker
+
+
+class TripsAlertBotFactory(Factory):
+    class Meta:
+        model = TripsAlertBot

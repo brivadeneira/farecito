@@ -26,12 +26,11 @@ from typing import Any, List, TypeVar
 
 from neo4j import AsyncGraphDatabase
 from neo4j.exceptions import AuthError, DatabaseError, DriverError, Forbidden, TransientError
-from pydantic import BaseModel, StrictStr, validator
+from pydantic import StrictStr, validator
 from pydantic.dataclasses import dataclass
 
 from neo4j_graph.utils import get_cypher_core_data_type, snake_to_upper_camel
-
-from .settings import APP_NAME
+from settings import APP_NAME
 
 logger = logging.getLogger(APP_NAME)
 logger.setLevel(logging.DEBUG)

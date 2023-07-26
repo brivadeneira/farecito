@@ -60,6 +60,8 @@ repos:
                --disable=unexpected-keyword-arg,  # bug when heritage
                --disable=too-many-arguments,
                --disable=missing-timeout,
+               --disable=too-many-function-args,  # for some reason this is appearing for just one arg
+               --disable=too-many-lines
       ]
 
   - repo: https://github.com/PyCQA/autoflake

@@ -2,6 +2,7 @@
 Implements pipeline classes for flixbus.
 """
 import asyncio
+import logging
 from typing import Any
 
 from pydantic.dataclasses import dataclass
@@ -16,6 +17,10 @@ from neo4j_graph import (
 )
 from pipelines import BaseDataLoader, BaseDataProcessor
 from pipelines.settings import NEO4J_PASSWORD, NEO4J_URI, NEO4J_USERNAME
+from settings import APP_NAME
+
+logger = logging.getLogger(APP_NAME)
+logger.setLevel(logging.DEBUG)
 
 
 @dataclass
@@ -43,7 +48,7 @@ class FlixbusBusStationsDataProcessor(BaseDataProcessor):
         for item in data:
             if self.mandatory_fields:
                 if not all(item[field] for field in self.mandatory_fields):
-                    # TODO log missing item data
+                    logging.error("Missing data in %s", item)
                     continue
 
             reachable = item["reachable"]
@@ -51,7 +56,7 @@ class FlixbusBusStationsDataProcessor(BaseDataProcessor):
                 reach["id"] for reach in reachable if reach["id"] and isinstance(reach["id"], int)
             ]
             if not all(item["reachable"]):
-                # TODO log not reachable city
+                logging.error("No city reachable in %s", item)
                 continue
 
             lat, lon = item["location"]["lat"], item["location"]["lon"]

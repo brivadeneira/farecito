@@ -9,21 +9,29 @@ Classes:
 
 from __future__ import annotations
 
+import logging
+import time
 from abc import ABC, abstractmethod
 from typing import Any
 
+import requests
 from fake_useragent import UserAgent
 from pydantic.dataclasses import dataclass
 from requests import Session
-from requests.adapters import HTTPAdapter
+from requests.adapters import HTTPAdapter, SSLError
 from urllib3.util import Retry
+
+from settings import APP_NAME
+
+logger = logging.getLogger(APP_NAME)
+logger.setLevel(logging.DEBUG)
 
 
 class RequestError(ValueError):
     pass
 
 
-@dataclass
+@dataclass(kw_only=True)
 class BaseScraper:
     """
     Base class for getting data via http requests
@@ -111,18 +119,25 @@ class BaseScraper:
             if query:
                 request_args["json"] = query
 
+            response = None
             try:
                 match method:
                     case "GET":
                         response = session.get(**request_args)
                     case "POST":
                         response = session.post(**request_args)
-            except Exception as ex:
-                raise RequestError(ex) from ex
+            except requests.exceptions.RetryError as ex:
+                logger.error(ex)
+                time.sleep(60)
+                continue
+            except SSLError:
+                response = session.get(url, verify=False)
 
-            response.raise_for_status()  # TODO make this loop resilient
+            if response.status_code != 200:
+                logger.error(response.raise_for_status())  # TODO make this loop resilient
+                continue
+
             scraped_data.append(response.json())
-
         return scraped_data
 
 

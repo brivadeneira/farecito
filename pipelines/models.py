@@ -52,3 +52,16 @@ class BaseDataGetter(ABC):
         """
         Stores items into the correspondant data repository
         """
+
+
+@dataclass
+class BaseDataTracker(ABC):
+    """
+    Base class for tracking items
+    """
+
+    @abstractmethod
+    async def track_data_of_interest(self, processed_data: list[Any]):
+        """
+        Track data of interest of processed_data template method
+        """

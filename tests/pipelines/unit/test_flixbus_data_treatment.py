@@ -4,52 +4,58 @@ Implements tests for Scrapers models.
 import unittest
 
 import pytest
-from pydantic import ValidationError
 
-from pipelines.flixbus.bus_stations_pipeline import (
-    FlixbusBusStationsDataLoader,
-    FlixbusBusStationsDataProcessor,
-)
-from tests.pipelines import (
-    FlixbusBusStationsDataLoaderFactory,
-    FlixbusBusStationsDataProcessorFactory,
-)
+from pipelines.flixbus.bus_trips_pipeline import FlixbusTripsTracker
+from pipelines.trip_alerts import TripsAlertBot
+from tests.pipelines import FlixbusTripsTrackerFactory, TripsAlertBotFactory
 
 
-class TestFlixbusBusStationsDataProcessor(unittest.TestCase):
+class TestFlixbusTripsTracker(unittest.TestCase):
+    def test_flixbus_trips_tracker(self):
+        trips_tracker = FlixbusTripsTrackerFactory()
+        self.assertIsInstance(trips_tracker, FlixbusTripsTracker)
+        self.assertIsInstance(trips_tracker.discount_threshold, float)
+        self.assertTrue(trips_tracker.discount_threshold < 1)
+
+
+class TestTripAlertBot(unittest.TestCase):
     @pytest.fixture(autouse=True)
-    def __inject_fixtures(
-        self, flixbus_busstations_parsed_data_mock, flixbus_busstations_processed_data_mock
-    ):
-        self.parsed_data = flixbus_busstations_parsed_data_mock
-        self.processed_data = flixbus_busstations_processed_data_mock
+    def __inject_fixtures(self, test_cheap_trip):
+        self.test_cheap_trip = test_cheap_trip
 
-    def test_flixbus_bustations_data_processor(self):
-        flixbus_data_processor = FlixbusBusStationsDataProcessorFactory(
-            parsed_data=self.parsed_data
+    def test_flixbus_trips_tracker(self):
+        test_cheap_trip = self.test_cheap_trip
+        alert_bot = TripsAlertBotFactory(trip=test_cheap_trip)
+        self.assertIsInstance(alert_bot, TripsAlertBot)
+        self.assertIsNotNone(alert_bot.trip)
+        self.assertIsInstance(alert_bot.trip, dict)
+        self.assertEqual(
+            alert_bot.ticket_url,
+            "https://shop.flixbus.com/search?departureCity=40d8f682-8646-11e6-9066-549f350fcb0c"
+            "%26arrivalCity=40de8964-8646-11e6-9066-549f350fcb0c%26rideDate=2024-07-26",
         )
-        self.assertIsInstance(flixbus_data_processor, FlixbusBusStationsDataProcessor)
-        self.assertIsInstance(flixbus_data_processor.chunk_size, int)
-        self.assertIsInstance(flixbus_data_processor.chunk_size, int)
-        processed_items = flixbus_data_processor.process_items()
-        self.assertIsInstance(processed_items, list)
-        all(self.assertIsInstance(item, dict) for item in processed_items)
-
-        # TODO improve test
-
-    def test_invalid_parsed_data_value(self):
-        with self.assertRaises(ValidationError):
-            FlixbusBusStationsDataProcessorFactory(parsed_data=-3.1416)
-
-    def test_flixbus_bustations_data_loader(self):
-        flixbus_data_loader = FlixbusBusStationsDataLoaderFactory(
-            processed_data=self.processed_data
+        self.assertIsInstance(alert_bot.human_departure_date, str)
+        self.assertTrue("from now" in alert_bot.human_departure_date)
+        self.assertEqual(
+            alert_bot.alert_message,
+            "🎟 A cheap ticket for you!\n"
+            "🚌 from Berlin to Paris\n"
+            "💰 for just **2.98 EUROS**!"
+            "\n📆 Schedule your next trip for 2024-07-26 00:00 (a year from now) GMT+2 time zone \n"
+            "🏃 Hurry up! just **20 remaining seats**"
+            "\n➡️ https://shop.flixbus.com/search?"
+            "departureCity=40d8f682-8646-11e6-9066-549f350fcb0c"
+            "%26arrivalCity=40de8964-8646-11e6-9066-549f350fcb0c"
+            "%26rideDate=2024-07-26",
         )
-        self.assertIsInstance(flixbus_data_loader, FlixbusBusStationsDataLoader)
 
-    def test_invalid_processed_data_value(self):
-        with self.assertRaises(ValidationError):
-            FlixbusBusStationsDataLoaderFactory(processed_data=-3.1416)
+
+class TestFlixbusCitiesDataGetter(unittest.TestCase):
+    @pytest.fixture(autouse=True)
+    def __inject_fixtures(self):
+        ...
+
+    # TODO
 
 
 if __name__ == "__main__":
