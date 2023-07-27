@@ -12,14 +12,24 @@ from scrapers.flixbus.bus_stations_scraper import (
     FlixbusBusStationsScraper,
 )
 
+nest_asyncio.apply()
 # patches asyncio to allow nested use of asyncio.run
 # and loop.run_until_complete
 
 
-nest_asyncio.apply()
-
-
 async def load_flixbus_cities(region: str = "EU"):
+    """
+    Load Flixbus cities data for a given region.
+
+    This function orchestrates the process of loading
+    Flixbus cities data for the specified region.
+    It involves scraping the data from the Flixbus website,
+    parsing the scraped data, processing the parsed data,
+    and finally, loading the processed data into a data loader.
+
+    :param region: (str, optional) The region for which cities data should be loaded
+    (default is "EU").
+    """
     flixbus_stations_scraper = FlixbusBusStationsScraper(region=region)
     scraped_stations = flixbus_stations_scraper.get_data(method="POST")
     flixbus_stations_parser = FlixbusBusStationsParser(region=region, scraped_data=scraped_stations)

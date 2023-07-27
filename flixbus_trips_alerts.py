@@ -1,5 +1,5 @@
 """
-Alert for cheap trips
+Scrap, proccess and alert for flixbus cheap trips
 """
 import asyncio
 import concurrent
@@ -16,6 +16,18 @@ logger.setLevel(logging.DEBUG)
 
 
 async def get_flixbus_routes(region: str = "EU"):
+    """
+    Get Flixbus routes data for a given region.
+
+    This function retrieves popular routes data for the specified region,
+    then creates a list of FlixbusTripsScraper
+    instances for each departure and arrival city pair in the popular routes.
+    The list of scraped routes is then     randomized before returning.
+
+    :param region: (str, optional) The region for which routes data should be retrieved
+    (default is "EU").
+    :return: A list of FlixbusTripsScraper instances representing the scraped routes.
+    """
     cities_getter = FlixbusCitiesDataGetter(region=region)
     popular_routes = await cities_getter.get_stored_data()
 
@@ -49,6 +61,17 @@ async def scrape_and_send_alerts(scraper):
 
 
 async def get_flixbus_trips(region: str = "EU"):
+    """
+    Scrape Flixbus data, track cheap trips, and send alerts.
+
+    This function takes a FlixbusTripsScraper instance as input,
+    scrapes Flixbus data using the given scraper,
+    tracks and identifies cheap trips using FlixbusTripsTracker,
+    and sends alerts for the found cheap trips
+    using TripsAlertBot.
+
+    :param scraper: A FlixbusTripsScraper instance used for data scraping.
+    """
     scraped_routes = await get_flixbus_routes(region)
 
     loop = asyncio.get_event_loop()
@@ -56,7 +79,6 @@ async def get_flixbus_trips(region: str = "EU"):
     loop.run_until_complete(asyncio.gather(*tasks))
 
 
-# Run the main function
 if __name__ == "__main__":
     with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
         executor.submit(asyncio.run, get_flixbus_trips())
