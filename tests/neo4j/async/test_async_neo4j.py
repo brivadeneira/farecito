@@ -70,8 +70,8 @@ class Neo4jConnTests(IsolatedAsyncioTestCase):
         # assert res is session_executor_mock.return_value
 
 
-# TODO add more tests
-# TODO solve 'PytestUnknownMarkWarning: Unknown pytest.mark.asyncio - is this a typo?'
+# TODO [missing tests]
+# TODO [bug] solve 'PytestUnknownMarkWarning: Unknown pytest.mark.asyncio - is this a typo?'
 
 
 if __name__ == "__main__":
