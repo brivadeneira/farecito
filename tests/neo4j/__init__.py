@@ -5,12 +5,6 @@ used in Neo4J graph database operations.
 The factories defined in this module use the 'factory' library to create instances of data models
 used in the Neo4J graph database. The factories make use of the 'Faker' class to generate realistic
 fake data for attributes of the models.
-
-Classes:
-- CompanyInfoFactory: Factory for generating fake CompanyInfo instances.
-- LocationFactory: Factory for generating fake Location instances.
-- Neo4JNodeFactory: Factory for generating fake Neo4JNode instances.
-- Neo4JConnFactory: Factory for generating fake Neo4JConn instances.
 """
 
 import datetime

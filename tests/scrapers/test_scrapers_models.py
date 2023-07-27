@@ -1,5 +1,8 @@
 """
 Implements tests for Scrapers models.
+
+NOTE: Define a pytest fixture named __inject_fixtures with the autouse=True option is necessary,
+ in order to inject the value of fixtures into all test methods in the test class where it is used.
 """
 import unittest
 
@@ -10,13 +13,6 @@ from tests.scrapers import BaseScraperFactory
 
 
 class TestBaseScraper(unittest.TestCase):
-    """
-    @pytest.fixture(autouse=True)
-    def __inject_fixtures(self, mocker, dummy_uri):
-        self.mocker = mocker
-        self.dummy_url = dummy_uri
-    """
-
     def test_base_scraper(self):
         base_scraper = BaseScraperFactory()
         self.assertIsInstance(base_scraper, BaseScraper)
@@ -35,13 +31,13 @@ class TestBaseScraper(unittest.TestCase):
     def test_build_headers(self):
         base_scraper = BaseScraperFactory()
         headers = base_scraper.build_headers()
-        # TODO add call asserts
+        # TODO [missing tests] add call asserts
         expected_headers_keys = {"User-Agent", "Accept", "Connection"}
-        self.assertEqual(expected_headers_keys, set(headers.keys()))
+        self.assertEqual(set(headers.keys()), expected_headers_keys)
         for k in headers.keys():
             self.assertIsInstance(headers[k], str)
 
-    # TODO
+    # TODO [missing tests]
     """
     @patch('requests.Session')
     @patch('requests.adapters.HTTPAdapter')

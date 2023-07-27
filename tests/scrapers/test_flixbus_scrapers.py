@@ -1,5 +1,8 @@
 """
 Implements tests for Scrapers models.
+
+NOTE: Define a pytest fixture named __inject_fixtures with the autouse=True option is necessary,
+ in order to inject the value of fixtures into all test methods in the test class where it is used.
 """
 import unittest
 
@@ -13,13 +16,6 @@ from tests.scrapers import FlixbusBusStationsParserFactory, FlixbusBusStationsSc
 
 
 class TestFlixbusBusStationsScraper(unittest.TestCase):
-    """
-    @pytest.fixture(autouse=True)
-    def __inject_fixtures(self, mocker, dummy_uri):
-        self.mocker = mocker
-        self.dummy_url = dummy_uri
-    """
-
     def test_flixbus_bustations_scraper(self):
         flixbus_scraper = FlixbusBusStationsScraperFactory()
         self.assertIsInstance(flixbus_scraper, FlixbusBusStationsScraper)
@@ -32,8 +28,8 @@ class TestFlixbusBusStationsScraper(unittest.TestCase):
             "bottom_right": {"lat": 16.636191878397664, "lon": 97.11914062500001},
             "top_left": {"lat": 63.509375401175134, "lon": -71.63085937500001},
         }
-        self.assertEqual(eu_expected_coordinates, flixbus_scraper.region_coordinates)
-        # TODO test requests
+        self.assertEqual(flixbus_scraper.region_coordinates, eu_expected_coordinates)
+        # TODO [missing tests] requests
 
 
 class TestrFlixbusBusStationsParser(unittest.TestCase):
@@ -49,7 +45,7 @@ class TestrFlixbusBusStationsParser(unittest.TestCase):
         self.assertIsInstance(parsed_data, list)
         expected_keys = {"location", "search_volume", "reachable", "name", "id", "uuid", "region"}
         self.assertTrue(set(item.keys) == expected_keys for item in parsed_data)
-        # TODO improve test
+        # TODO [improvement] test
 
 
 if __name__ == "__main__":

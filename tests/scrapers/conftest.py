@@ -8,7 +8,7 @@ import pytest
 @pytest.fixture
 def flixbus_busstations_response_data_mock():
     # data_mock = MagicMock()
-    # TODO improve fake data generation
+    # TODO [improvement] fake data generation
     data = {
         "took": 7,
         "timed_out": False,
