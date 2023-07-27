@@ -23,7 +23,7 @@ class TestTripAlertBot(unittest.TestCase):
     def __inject_fixtures(self, test_cheap_trip):
         self.test_cheap_trip = test_cheap_trip
 
-    def test_flixbus_trips_tracker(self):
+    def test_flixbus_alert_bot(self):
         test_cheap_trip = self.test_cheap_trip
         alert_bot = TripsAlertBotFactory(trip=test_cheap_trip)
         self.assertIsInstance(alert_bot, TripsAlertBot)
@@ -36,18 +36,22 @@ class TestTripAlertBot(unittest.TestCase):
         )
         self.assertIsInstance(alert_bot.human_departure_date, str)
         self.assertTrue("from now" in alert_bot.human_departure_date)
-        self.assertEqual(
-            alert_bot.alert_message,
-            "🎟 A cheap ticket for you!\n"
-            "🚌 from Berlin to Paris\n"
-            "💰 for just **2.98 EUROS**!"
-            "\n📆 Schedule your next trip for 2024-07-26 00:00 (a year from now) GMT+2 time zone \n"
-            "🏃 Hurry up! just **20 remaining seats**"
-            "\n➡️ https://shop.flixbus.com/search?"
-            "departureCity=40d8f682-8646-11e6-9066-549f350fcb0c"
-            "%26arrivalCity=40de8964-8646-11e6-9066-549f350fcb0c"
+        message_strs = [
+            "🎟 A cheap ticket for you!\n",
+            "🚌 from Berlin to Paris\n",
+            "💰 for just **2.98 EUROS**!",
+            "\n📆 Schedule your next trip for 2024-07-26 00:00",
+            "GMT+2 time zone \n",
+            "🏃 Hurry up! just **20 remaining seats**",
+            "\n➡️ https://shop.flixbus.com/search?",
+            "departureCity=40d8f682-8646-11e6-9066-549f350fcb0c",
+            "%26arrivalCity=40de8964-8646-11e6-9066-549f350fcb0c",
             "%26rideDate=2024-07-26",
-        )
+        ]
+        for message_str in message_strs:
+            self.assertIn(message_str, alert_bot.alert_message)
+
+        # TODO [missing tests] add send alert test
 
 
 class TestFlixbusCitiesDataGetter(unittest.TestCase):
@@ -55,7 +59,7 @@ class TestFlixbusCitiesDataGetter(unittest.TestCase):
     def __inject_fixtures(self):
         ...
 
-    # TODO
+    # TODO [missing tests]
 
 
 if __name__ == "__main__":

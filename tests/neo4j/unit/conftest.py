@@ -1,18 +1,22 @@
 """
 This module contains fixtures and factories for testing Neo4j functionality.
 
-All "dummy" fixtures must have the next format in all their values attributes:
-- str: "dummy_<attribute name>"
-- int: 0
-- float: 0.0
-- list[int] = [1, 2, 3]
-...
+The fixtures provided in this module serve as test data generators for various Neo4j data models.
+All "dummy" fixtures adhere to the specified format in their values attributes.
 
 Fixtures:
 - dummy_price
+- dummy_location
 - dummy_node
 - dummy_bus_station_node
 - dummy_node_relationship
+- dummy_graph
+
+Dummy Fixture Format:
+- str: "dummy_<attribute name>"
+- int: 0
+- float: 0.0
+- list[int]: [1, 2, 3]
 
 """
 import datetime

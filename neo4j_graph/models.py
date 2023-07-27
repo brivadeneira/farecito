@@ -410,7 +410,7 @@ class UnstructuredGraph:
         create each node using the 'MERGE' command, ensuring that duplicate nodes are not created.
 
         NOTE: All null values are replaced with an empty string '' in case of 'MERGE'.
-        TODO: Improve the treatment for null values if necessary.
+        TODO: [improvement] the treatment for null values if necessary.
 
         :return: (str) a Cypher query to create multiple nodes at once, e.g.
             'FOREACH (node IN [{name: 'Micky Vainilla', age: 45, profession: 'Pop Singer'},

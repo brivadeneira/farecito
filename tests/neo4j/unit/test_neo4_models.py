@@ -1,5 +1,11 @@
 """
 Implements tests for Neo4j-based data models.
+
+This module contains test cases for various data models used in Neo4j-based applications.
+Each test case focuses on validating the functionality and correctness of the respective data model.
+
+NOTE: Define a pytest fixture named __inject_fixtures with the autouse=True option is necessary,
+ in order to inject the value of fixtures into all test methods in the test class where it is used.
 """
 import datetime
 import unittest
@@ -42,7 +48,7 @@ class TestPrice(unittest.TestCase):
 
     def test_valid_cypher_core_str(self):
         expected_cypher_core_str = '"0.0 USD"'
-        assert pytest.approx(expected_cypher_core_str) == pytest.approx(str(self.dummy_price))
+        assert pytest.approx(str(self.dummy_price)) == pytest.approx(expected_cypher_core_str)
 
     def test_invalid_amount_value(self):
         with self.assertRaises(TypeError):
@@ -58,12 +64,6 @@ class TestPrice(unittest.TestCase):
 
 
 class TestLocation(unittest.TestCase):
-    """
-    Test cases for Location model
-
-    including type attr validation and cypher repr
-    """
-
     def test_valid_location(self):
         location = LocationFactory()
         self.assertIsInstance(location.latitude, float)
@@ -74,8 +74,8 @@ class TestLocation(unittest.TestCase):
     def test_valid_cypher_core_str(self):
         dummy_location = LocationFactory(latitude=0.0, longitude=0.0)
         expected_cypher_core_str = "point({ longitude: 0.0, latitude: 0.0 })"
-        # TODO: improve strings comparison
-        assert pytest.approx(expected_cypher_core_str) == pytest.approx(str(dummy_location))
+        # TODO [improvement] strings comparison
+        assert pytest.approx(str(dummy_location)) == pytest.approx(expected_cypher_core_str)
 
     def test_invalid_latitude_value(self):
         with self.assertRaises(ValueError):
@@ -95,12 +95,6 @@ class TestLocation(unittest.TestCase):
 
 
 class TestNode(unittest.TestCase):
-    """
-    Test cases for Node model
-
-    including type attr validation and cypher repr
-    """
-
     @pytest.fixture(autouse=True)
     def __inject_fixtures(self, dummy_node):
         self.dummy_node = dummy_node
@@ -115,7 +109,7 @@ class TestNode(unittest.TestCase):
 
     def test_valid_cypher_core_str(self):
         expected_cypher_core_str = 'Id: 123, NodeType: "dummy_node_type", ReachableIds: [1, 2, 3]'
-        assert pytest.approx(expected_cypher_core_str) == pytest.approx(str(self.dummy_node))
+        assert pytest.approx(str(self.dummy_node)) == pytest.approx(expected_cypher_core_str)
 
     def test_invalid_int(self):
         with self.assertRaises(ValueError):
@@ -127,12 +121,12 @@ class TestNode(unittest.TestCase):
 
     def test_get_node_properties(self):
         expected_properties = {"Id", "NodeType", "ReachableIds"}
-        self.assertTrue(expected_properties == self.dummy_node.node_properties)
+        self.assertTrue(self.dummy_node.node_properties == expected_properties)
 
     def test_get_cypher_node_properties(self):
         expected_properties = ["Id", "NodeType", "ReachableIds"]
-        obtained_properties = self.dummy_node.cypher_node_properties
-        assert set(expected_properties) == set(obtained_properties)
+        actual_properties = self.dummy_node.cypher_node_properties
+        assert set(actual_properties) == set(expected_properties)
 
     def test_cypher_create_query(self):
         expected_create_query = (
@@ -141,7 +135,7 @@ class TestNode(unittest.TestCase):
         )
 
         actual_create_query = self.dummy_node.cypher_create_query
-        assert pytest.approx(expected_create_query) == pytest.approx(actual_create_query)
+        assert pytest.approx(actual_create_query) == pytest.approx(expected_create_query)
 
 
 class TestBusStationNode(unittest.TestCase):
@@ -176,7 +170,7 @@ class TestBusStationNode(unittest.TestCase):
             "Id",
         }
         actual_node_properties = self.dummy_bus_station_node.node_properties
-        self.assertTrue(expected_properties == actual_node_properties)
+        self.assertTrue(actual_node_properties == expected_properties)
 
     def test_valid_cypher_core_str(self):
         expected_cypher_core_str = (
@@ -188,9 +182,9 @@ class TestBusStationNode(unittest.TestCase):
             "IsPopular: false"
         )
 
-        obtained_cypher_str = str(self.dummy_bus_station_node)
+        actual_cypher_str = str(self.dummy_bus_station_node)
 
-        assert pytest.approx(expected_cypher_core_str) == pytest.approx(obtained_cypher_str)
+        assert pytest.approx(actual_cypher_str) == pytest.approx(expected_cypher_core_str)
 
     def test_invalid_name_type(self):
         with self.assertRaises(ValidationError):
@@ -209,7 +203,7 @@ class TestBusStationNode(unittest.TestCase):
         )
 
         actual_create_query = self.dummy_bus_station_node.cypher_create_query
-        assert pytest.approx(expected_create_query) == pytest.approx(actual_create_query)
+        assert pytest.approx(actual_create_query) == pytest.approx(expected_create_query)
 
 
 class TestNodeRelationShip(unittest.TestCase):
@@ -237,7 +231,7 @@ class TestNodeRelationShip(unittest.TestCase):
             "AverageDuration: duration({ hours: 1, minutes: 12 }), "
             'AveragePrice: "0.0 USD"'
         )
-        assert pytest.approx(expected_relationship_cypher_str) == pytest.approx(str(relationship))
+        assert pytest.approx(str(relationship)) == pytest.approx(expected_relationship_cypher_str)
 
     def test_invalid_name_type(self):
         with self.assertRaises(ValidationError):
@@ -278,7 +272,7 @@ class TestUnstructuredGraph(unittest.TestCase):
             "))"
         )
 
-        assert pytest.approx(expected_query) == pytest.approx(graph.create_nodes_query)
+        assert pytest.approx(graph.create_nodes_query) == pytest.approx(expected_query)
 
     def test_different_nodes_class(self):
         with self.assertRaises(ValidationError):

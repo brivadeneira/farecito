@@ -28,7 +28,7 @@ test_objects_to_cypher_with_ids = [
         "duration({ hours: 1, minutes: 1 })",
         "datetime_just_with_seconds",
     ],
-    ["Turanga Leela", '"Turanga Leela"', "str"],
+    ["Violencia Rivas", '"Violencia Rivas"', "str"],
     [[1, 2, 3], str([1, 2, 3]), "list_of_ints"],
     [["1", "2", "3"], '["1", "2", "3"]', "list_of_strs"],
     [3.1416, str(3.1416), "float"],
@@ -42,9 +42,8 @@ test_objects_to_cypher_ids = [group[-1] for group in test_objects_to_cypher_with
     "_obj,expected_cypher_core_data", test_objects_to_cypher, ids=test_objects_to_cypher_ids
 )
 def test_object_to_cypher_repr(_obj, expected_cypher_core_data):
-    assert pytest.approx(get_cypher_core_data_type(_obj)) == pytest.approx(
-        expected_cypher_core_data
-    )
+    actual_cypher_core_data = get_cypher_core_data_type(_obj)
+    assert pytest.approx(actual_cypher_core_data) == pytest.approx(expected_cypher_core_data)
 
 
 @pytest.mark.parametrize(
