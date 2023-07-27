@@ -1,5 +1,7 @@
 """
-Implements flixbus bus trips web scraping
+Implements flixbus bus trips web scraping.
+
+This module contains a class for scraping and parsing Flixbus trips.
 """
 from datetime import datetime, timedelta
 from typing import Any
@@ -14,11 +16,14 @@ from scrapers import BaseScraper
 @dataclass
 class FlixbusTripsScraper(BaseScraper):
     """
-    Look for trips from and to given cities
-    and during a range of dates.
+    A class for scraping Flixbus trips between specified departure
+    and arrival cities and within a given date range.
+
+    It extends the `BaseScraper` class and provides methods
+    for generating the URLs for searching trips in a set of dates.
     """
 
-    # TODO fix this: dataclass not fully defined
+    # TODO [bug] fix this: dataclass not fully defined
     departure_city_uuid: Any
     arrival_city_uuid: Any
     default_days_range: Any

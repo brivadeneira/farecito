@@ -1,10 +1,7 @@
 """
-Implements classes for trips web scraping
-
-Classes:
-- BaseScraper: Base class for getting data via http requests
-- BaseParser: Base class for parse scraped data
-- BusStationScraper: Special model for bus stations web scraping
+Implements classes for trips web scraping,
+including getting data via http requests,
+parse the scraped data and a special model for bus stations.
 """
 
 from __future__ import annotations
@@ -27,14 +24,15 @@ logger = logging.getLogger(APP_NAME)
 logger.setLevel(logging.DEBUG)
 
 
-class RequestError(ValueError):
-    pass
-
-
 @dataclass(kw_only=True)
 class BaseScraper:
     """
-    Base class for getting data via http requests
+    Base class for HTTP-based web scrapers.
+
+    This class serves as a foundation for creating web scrapers that retrieve data
+    by making HTTP requests to specified endpoint URLs.
+    It provides common functionalities such as handling retries,
+    custom headers, and user-agent rotation.
     """
 
     endpoint_uris: Any = None  # TODO fix this, list[str] | Generator = None
@@ -56,7 +54,15 @@ class BaseScraper:
                 raise TypeError("endpoint_uris must start with a valid schema: https:// or http://")
 
     @property
-    def requests_retry_session(self):
+    def requests_retry_session(self) -> Session:
+        """
+        This property creates and configures a new requests Session with a retry mechanism
+        for handling HTTP requests.
+        According to 'retries', 'backoff', and 'status_forcelist' values.
+        It allows 'GET' and 'POST' methods for retries.
+
+        :return: requests.Session object with retry functionality.
+        """
         session = Session()
         retries = Retry(
             total=self.retries,
@@ -134,7 +140,9 @@ class BaseScraper:
                 response = session.get(url, verify=False)
 
             if response.status_code != 200:
-                logger.error(response.raise_for_status())  # TODO make this loop resilient
+                logger.error(
+                    response.raise_for_status()
+                )  # TODO [improvement] make this loop resilient
                 continue
 
             scraped_data.append(response.json())

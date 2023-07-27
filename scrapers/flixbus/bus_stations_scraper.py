@@ -1,5 +1,8 @@
 """
-Implements flixbus bus trips web scraping
+Implements flixbus bus trips web scraping.
+
+This module contains classes for scraping bus station data from the Flixbus website.
+It includes scraping and parsing classes
 """
 import logging
 from typing import Any
@@ -17,8 +20,9 @@ logger.setLevel(logging.DEBUG)
 @dataclass
 class FlixbusBusStationsScraper(BaseScraper):
     """
-    This class actually look for cities that are reachable by bus,
-    but respond to the BusStationModel
+    A class for scraping bus station data from the Flixbus
+    website. It extends the `BaseScraper` class and provides a custom query for fetching
+    cities that can be reached by bus from a given region.
     """
 
     region: str = "EU"
@@ -96,6 +100,13 @@ class FlixbusBusStationsScraper(BaseScraper):
 
 @dataclass
 class FlixbusBusStationsParser(BaseParser):
+    """
+    A class for parsing the scraped data obtained by the
+    `FlixbusBusStationsScraper`. It extends the `BaseParser` class and implements the
+    abstract method `parse_data` to transform the data into a list of dictionaries
+    representing bus stations.
+    """
+
     region: str = "EU"
 
     def parse_data(self) -> list[Any]:

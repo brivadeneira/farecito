@@ -6,4 +6,3 @@ Models, utils and settings for scrapers:
 
 from .flixbus import *
 from .models import *
-from .utils import *
