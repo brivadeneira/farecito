@@ -19,7 +19,7 @@ def date_time_to_cypher_conversion(date_time_object: datetime.datetime | datetim
     """
     if isinstance(date_time_object, datetime.datetime):
         formatted_date = date_time_object.strftime("%Y-%m-%dT%H:%M:%S.%f%z")
-        # TODO manage different time zones
+        # TODO [feature] manage different time zones
         return f'datetime("{formatted_date}")'
     # timedelta
     duration_str = ""
@@ -51,8 +51,9 @@ def get_cypher_core_data_type(_obj: any) -> str:
     :return: (str) with the cypher representation of the object
     """
     if _obj is None:
-        return "''"  # "Null", for avoiding cypher error when creating multiple nodes
-        # TODO fix this!
+        return "''"
+        # "Null", for avoiding cypher error when creating multiple nodes
+        # TODO [improvement] fix this!
     if isinstance(_obj, bool):
         return str(_obj).lower()
     if isinstance(_obj, (datetime.datetime, datetime.timedelta)):
@@ -61,7 +62,7 @@ def get_cypher_core_data_type(_obj: any) -> str:
         # Putting this block here avoid treating a str as iterable in next one
         return f'"{_obj}"'
     if isinstance(_obj, Iterable):
-        # TODO test/improve the performance of next block
+        # TODO [improvement] (and test) the performance of next block
         for an_item, another_item in itertools.combinations(_obj, 2):
             if not isinstance(an_item, type(another_item)):
                 raise ValueError("Cypher arrays must contain the same type of objects")
@@ -87,7 +88,7 @@ def snake_to_upper_camel(snake_str: str) -> str:
     return to_camel(snake_str)
 
 
-# TODO move next func to a more accurate place
+# TODO [refactor] move next func to a more accurate place
 def get_popular_cities_cypher_query(region: str = "EU") -> str:
     """
     Query for look for all city_uuid popular cities,
@@ -107,7 +108,25 @@ def get_popular_cities_cypher_query(region: str = "EU") -> str:
 
 
 def get_nodes_cypher_query(region: str = "EU", properties: list[str] = None) -> str:
-    # TODO add tests for this func
+    """
+    Generate a Cypher query to retrieve nodes based on specified properties and region.
+
+    This function constructs a Cypher query to match nodes
+    in the databasethat belong to the given region.
+    It also allows for filtering the properties to be returned for each matched node.
+
+    :param region: (str) The region to filter nodes by. Default is 'EU' (Europe).
+    :param properties: (list[str]) A list of property names to be returned for each matched node.
+                       If None, all properties of the matched nodes will be returned.
+                       Default is None.
+    :return: (str) A Cypher query to fetch nodes based on the given region and properties.
+    :raises: ValueError: If 'properties' is not a list of strings or contains non-string elements.
+
+    Example:
+        get_nodes_cypher_query(region='South America', properties=['name', 'age'])
+        Output: "MATCH(n) WHERE n.Region='South America' RETURN n.Name, n.Age"
+    """
+    # TODO [missing tests]
     if not isinstance(properties, list):
         raise ValueError(f"properties must be a list of str, not {type(properties)}")
     if not all((isinstance(prop, str) for prop in properties)):
