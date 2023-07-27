@@ -22,9 +22,11 @@ including **USA**, **Brasil** and **Europe**.
 
 ## Installation and usage
 
+* **python version**: 3.11
+*
 ```shell
 ~$ git clone https://github.com/brivadeneira/farecito.git
-~$ conda create -n farecito python=3.10
+~$ conda create -n farecito python=3.11
 ~$ pip install -r requirements.txt
 ```
 
@@ -38,8 +40,6 @@ including **USA**, **Brasil** and **Europe**.
 fill the env values:
 - Aura Instance's credentials: it must be downloaded when creating the instance
 - `TELEGRAM_BOT_TOKEN`: Got when creating a telegram bot, according to: https://core.telegram.org/bots/tutorial
-
-## Installation and usage
 
 ```shell
 ~$ python main.py
