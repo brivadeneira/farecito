@@ -1,5 +1,5 @@
 """
-Implements pipeline classes for flixbus.
+Implements pipeline classes for flixbus bus stations.
 """
 import asyncio
 import logging
@@ -30,7 +30,7 @@ class FlixbusBusStationsDataProcessor(BaseDataProcessor):
     """
 
     ranking_size: int = 20  # determine the size of most searched stations ranking (cities)
-    chunk_size: int = 100  # TODO research the best value for this
+    chunk_size: int = 100  # TODO [research] the best value for this
 
     def __post_init__(self):
         self.mandatory_fields = ["id", "name", "uuid", "location", "search_volume", "reachable"]
@@ -87,7 +87,7 @@ class FlixbusBusStationsDataLoader(BaseDataLoader):
 
     processed_data: list[Any]
     conn: Any = None
-    chunk_size: int = 100  # TODO research what is the best value
+    chunk_size: int = 100  # TODO [research] what is the best value
     region: str = "EU"
 
     def __post_init__(self):
@@ -107,8 +107,7 @@ class FlixbusBusStationsDataLoader(BaseDataLoader):
         chunk_size = self.chunk_size
         conn = self.conn
 
-        # TODO split next block
-        # TODO add tests!!
+        # TODO [refactor] split next block
 
         create_node_queries, multi_node_relationship_queries, single_node_relationship_queries = (
             [],
@@ -150,8 +149,9 @@ class FlixbusBusStationsDataLoader(BaseDataLoader):
         new_nodes_chunks = [
             new_nodes[i : i + chunk_size] for i in range(0, len(new_nodes), chunk_size)
         ]
+
         for chunk in new_nodes_chunks:
-            # TODO add resilient block here in case something wrong with an item
+            # TODO [improvement] add resilient block here in case something wrong with an item
             nodes = [BusStationNode(**item) for item in chunk]
             graph = UnstructuredGraph(nodes)
             create_node_queries.append(graph.create_nodes_query)

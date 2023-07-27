@@ -10,7 +10,7 @@ from neo4j_graph import Location
 @pytest.fixture
 def flixbus_busstations_parsed_data_mock():
     # data_mock = MagicMock()
-    # TODO improve fake data generation
+    # TODO [improvement] fake data generation
     data = [
         {
             "id": 2015,

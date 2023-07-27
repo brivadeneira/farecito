@@ -23,6 +23,13 @@ logger.setLevel(logging.DEBUG)
 
 @dataclass
 class TripsAlertBot:
+    """
+    Implements a Trips Alert Bot for sending notifications about cheap bus trips.
+    It takes a trip and sends it details as alerts via Telegram API.
+
+    Note: Requires the constant `TELEGRAM_BOT_TOKEN`, not defined here.
+    """
+
     trip: dict[str, Any]
     bot_url: str = None
 
@@ -45,16 +52,29 @@ class TripsAlertBot:
 
     @property
     def human_departure_date(self):
+        """
+        Get the humanized departure date of the trip.
+        :return: (str) e.g. "4 hours from now"
+        """
         departure_date = datetime.strptime(self.trip["departure_date"], "%Y-%m-%dT%H:%M:%S%z")
         return humanize.naturaltime(departure_date)
 
     @property
     def departure_date(self):
+        """
+        Get just the date info in '%Y-%m-%d %H:%M' str format
+        :return: (str), e.g. "2023-07-27 00:00"
+        """
         departure_date = datetime.strptime(self.trip["departure_date"], "%Y-%m-%dT%H:%M:%S%z")
         return f"{departure_date.strftime('%Y-%m-%d %H:%M')}"
 
     @property
     def ticket_url(self):
+        """
+        Build the link of shop search flixbus trips
+        where the cheap one exists.
+        :return:
+        """
         departure_city_uuid, arrival_city_uuid = (
             self.trip["departure_city_uuid"],
             self.trip["arrival_city_uuid"],
@@ -68,6 +88,10 @@ class TripsAlertBot:
 
     @property
     def alert_message(self):
+        """
+        Builds a friendly message alertinf about a cheap trip
+        :return: (str)
+        """
         from_city_name, to_city_name = self.trip["from_city_name"], self.trip["to_city_name"]
         seats_available, price = self.trip["seats_available"], self.trip["price_total"]
         human_departure_date, ticket_url = self.human_departure_date, self.ticket_url
@@ -83,10 +107,15 @@ class TripsAlertBot:
             f"➡️ {ticket_url}"
         )
 
-    async def send_alert_message(self):
+    async def send_alert_message(self) -> None:
+        """
+        Send the alert message to the correspondant channel,
+        accordinf to https://core.telegram.org/method/messages.sendMessage
+        :return: (None)
+        """
         if "ago" not in self.alert_message:
-            # TODO fix this
-            # for some reason tickets from the past are being catched
+            # TODO [bug] fix this
+            # for some reason tickets from the past are being caught
             message = self.alert_message
             bot_url = self.bot_url
 

@@ -4,6 +4,8 @@ Pipeline unit tests fixtures
 
 import pytest
 
+# TODO [improvement] fake data generation
+
 
 @pytest.fixture
 def test_cheap_trip():

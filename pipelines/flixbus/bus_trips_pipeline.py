@@ -28,7 +28,11 @@ class FlixbusCitiesDataGetter(BaseDataGetter):
                 password=NEO4J_PASSWORD,
             )
 
-    async def get_stored_data(self):
+    async def get_stored_data(self) -> list[dict[str, Any]]:
+        """
+        Get the set of popular cities
+        :return: (list[dict])
+        """
         conn = self.conn
         region = self.region
 
@@ -43,7 +47,8 @@ class FlixbusCitiesDataGetter(BaseDataGetter):
 @dataclass
 class FlixbusTripsTracker(BaseDataTracker):
     """
-    Base class for cleaning and validate flixbus bus trips
+    Base class for tracking the cheap trips from scraped data
+    (tickets with at least 50% off)
     """
 
     discount_threshold: int = 0.5  # at least 50% off

@@ -10,7 +10,7 @@ from pydantic.dataclasses import dataclass
 @dataclass
 class BaseDataProcessor(ABC):
     """
-    Base class for cleaning and validate from scrapers
+    Base class for cleaning and validate data from scrapers
     """
 
     parsed_data: list[dict[str, Any]]
@@ -42,7 +42,7 @@ class BaseDataLoader(ABC):
 @dataclass
 class BaseDataGetter(ABC):
     """
-    Base class for store items after being clean and validated from scrapers
+    Base class for getting data from the corresponding repository
     """
 
     conn: Any = None
@@ -50,7 +50,7 @@ class BaseDataGetter(ABC):
     @abstractmethod
     async def get_stored_data(self):
         """
-        Stores items into the correspondant data repository
+        Get stored items
         """
 
 
