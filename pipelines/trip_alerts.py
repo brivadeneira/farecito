@@ -17,6 +17,7 @@ from settings import APP_NAME
 load_dotenv()
 
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")  # TODO [improvement] read according to dev or prd
 
 logger = logging.getLogger(APP_NAME)
 logger.setLevel(logging.INFO)
@@ -50,6 +51,8 @@ class TripsAlertBot:
 
         if not self.bot_url:
             self.bot_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}"
+
+        self.chat_id = TELEGRAM_CHAT_ID
 
     @property
     def human_departure_date(self):
@@ -121,10 +124,11 @@ class TripsAlertBot:
             # for some reason tickets from the past are being caught
             message = self.alert_message
             bot_url = self.bot_url
+            chat_id = self.chat_id
 
             logger.info(f"[{trace_uuid}] Trying to send a cheap ticket alert.")
 
-            send_msg_url = f"sendMessage?chat_id=@farecito_eu&text={message}&parse_mode=markdown"
+            send_msg_url = f"sendMessage?chat_id=@{chat_id}&text={message}&parse_mode=markdown"
             response = requests.post(f"{bot_url}/{send_msg_url}")
 
             if response.status_code != 200:
