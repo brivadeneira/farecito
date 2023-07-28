@@ -22,7 +22,7 @@ from urllib3.util import Retry
 from settings import APP_NAME
 
 logger = logging.getLogger(APP_NAME)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 
 @dataclass(kw_only=True)

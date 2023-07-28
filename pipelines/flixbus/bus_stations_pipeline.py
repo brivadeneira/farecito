@@ -21,7 +21,7 @@ from pipelines.settings import NEO4J_PASSWORD, NEO4J_URI, NEO4J_USERNAME
 from settings import APP_NAME
 
 logger = logging.getLogger(APP_NAME)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 
 @dataclass

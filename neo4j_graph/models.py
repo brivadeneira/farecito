@@ -37,7 +37,7 @@ from neo4j_graph.utils import get_cypher_core_data_type, snake_to_upper_camel
 from settings import APP_NAME
 
 logger = logging.getLogger(APP_NAME)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 from enum import Enum
 
@@ -516,3 +516,5 @@ class Neo4JConn:
             await self.execute_query(query)
         except Exception as ex:
             logger.error(f"[{trace_uuid}] A node4j exception appeared: {ex}")
+            await asyncio.sleep(sleep_time)
+            await self.execute_query(query)

@@ -21,7 +21,7 @@ nest_asyncio.apply()
 # and loop.run_until_complete
 
 logger = logging.getLogger(APP_NAME)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 
 async def load_flixbus_cities(region: str = "EU"):
