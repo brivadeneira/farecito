@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 import time
+import uuid
 from abc import ABC, abstractmethod
 from typing import Any
 
@@ -21,7 +22,7 @@ from urllib3.util import Retry
 from settings import APP_NAME
 
 logger = logging.getLogger(APP_NAME)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 @dataclass(kw_only=True)
@@ -103,6 +104,7 @@ class BaseScraper:
         :param method: 'GET' or 'POST', if not given GET will be implemented
         :return: a list of json representation of the data
         """
+        trace_uuid = str(uuid.uuid4())
 
         if not any(self.endpoint_uris):
             raise ValueError("at least a valid endpoint URI is mandatory")
@@ -127,13 +129,14 @@ class BaseScraper:
 
             response = None
             try:
+                logger.debug(f"[{trace_uuid}] HTTP request to {url} - Method: {method}")
                 match method:
                     case "GET":
                         response = session.get(**request_args)
                     case "POST":
                         response = session.post(**request_args)
             except requests.exceptions.RetryError as ex:
-                logger.error(ex)
+                logger.error(f"[{trace_uuid}] an exception appeared: {ex}")
                 time.sleep(60)
                 continue
             except SSLError:
@@ -144,7 +147,7 @@ class BaseScraper:
                     response.raise_for_status()
                 )  # TODO [improvement] make this loop resilient
                 continue
-
+            logger.debug(f"[{trace_uuid}] Response status code {response.status_code}")
             scraped_data.append(response.json())
         return scraped_data
 

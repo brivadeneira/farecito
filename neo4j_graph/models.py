@@ -37,7 +37,7 @@ from neo4j_graph.utils import get_cypher_core_data_type, snake_to_upper_camel
 from settings import APP_NAME
 
 logger = logging.getLogger(APP_NAME)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 from enum import Enum
 
@@ -465,11 +465,12 @@ class Neo4JConn:
         :raises: DriverError if there is an issue with the Neo4j driver.
         """
         try:
+            logger.info(f"trying to connect to {self.uri}:{self.db_name} db")
             self.async_driver = AsyncGraphDatabase.driver(
                 self.uri, auth=self.auth, database=self.db_name, max_connection_lifetime=200
             )
         except DriverError as ex:
-            logging.error(f"A node4j driver exception appeared: {ex}")
+            logger.error(f"A node4j driver exception appeared: {ex}")
 
     @validator("uri")
     def validate_nodes(cls, uri):
@@ -497,16 +498,21 @@ class Neo4JConn:
         trace_uuid = str(uuid.uuid4())
         try:
             async with self.async_driver.session() as session:
+                logger.debug(f"[{trace_uuid}] Trying to run a query: {query}")
                 result = await session.run(query)
                 data = await result.data()
                 if data:
-                    logger.debug(f"[{trace_uuid}] The data result for the query was: {data}")
+                    logger.debug(
+                        f"[{trace_uuid}] Successfully executed DB query and retrieved  {len(data)} result(s)"
+                    )
+                else:
+                    logger.debug(f"[{trace_uuid}] Successfully executed DB query with no result(s)")
                 return data
         except (AuthError, Forbidden, DatabaseError, DriverError, TransientError) as ex:
-            logging.error(f"[{trace_uuid}] A node4j exception appeared: {ex}")
+            logger.error(f"[{trace_uuid}] A node4j exception appeared: {ex}")
             await self._close_driver()
             await asyncio.sleep(sleep_time)
             self.init_driver()
             await self.execute_query(query)
         except Exception as ex:
-            logging.error(f"[{trace_uuid}] A node4j exception appeared: {ex}")
+            logger.error(f"[{trace_uuid}] A node4j exception appeared: {ex}")

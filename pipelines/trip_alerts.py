@@ -3,6 +3,7 @@ Telegram ticket alerts
 """
 import logging
 import os
+import uuid
 from datetime import datetime
 from typing import Any
 
@@ -18,7 +19,7 @@ load_dotenv()
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
 logger = logging.getLogger(APP_NAME)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 @dataclass
@@ -113,16 +114,25 @@ class TripsAlertBot:
         accordinf to https://core.telegram.org/method/messages.sendMessage
         :return: (None)
         """
+        trace_uuid = str(uuid.uuid4())
+
         if "ago" not in self.alert_message:
             # TODO [bug] fix this
             # for some reason tickets from the past are being caught
             message = self.alert_message
             bot_url = self.bot_url
 
+            logger.info(f"[{trace_uuid}] Trying to send a cheap ticket alert.")
+
             send_msg_url = f"sendMessage?chat_id=@farecito_eu&text={message}&parse_mode=markdown"
             response = requests.post(f"{bot_url}/{send_msg_url}")
 
             if response.status_code != 200:
-                logging.error("%s", response)
+                logger.error(
+                    f"[{trace_uuid}] cheap ticket alert not sent! HTTP request to {bot_url} - "
+                    f"Error: {response.reason}, Status Code: {response.status_code}"
+                )
             else:
-                logging.info("Cheap ticket sent!")
+                logger.info(
+                    f"[{trace_uuid}] cheap ticket alert sent! - Message: {self.alert_message}"
+                )

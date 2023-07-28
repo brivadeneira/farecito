@@ -12,5 +12,6 @@ nest_asyncio.apply()
 # and loop.run_until_complete
 
 if __name__ == "__main__":
-    # load_flixbus_cities(region=region)
+    # region = "EU"  # TODO [improvement] read region from env
+    # asyncio.run(load_flixbus_cities(region=region))  # TODO [bug] FIX THIS!
     asyncio.run(get_flixbus_trips())

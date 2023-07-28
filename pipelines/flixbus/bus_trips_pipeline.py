@@ -1,7 +1,9 @@
 """
 Implements pipeline classes for flixbus.
 """
+import logging
 import sys
+import uuid
 from typing import Any
 
 from pydantic.dataclasses import dataclass
@@ -9,6 +11,10 @@ from pydantic.dataclasses import dataclass
 from neo4j_graph import Neo4JConn, get_popular_cities_cypher_query
 from pipelines import BaseDataGetter, BaseDataTracker
 from pipelines.settings import NEO4J_PASSWORD, NEO4J_URI, NEO4J_USERNAME
+from settings import APP_NAME
+
+logger = logging.getLogger(APP_NAME)
+logger.setLevel(logging.INFO)
 
 
 @dataclass
@@ -36,11 +42,16 @@ class FlixbusCitiesDataGetter(BaseDataGetter):
         conn = self.conn
         region = self.region
 
+        trace_uuid = str(uuid.uuid4())
+        logger.info(f"[{trace_uuid}] Trying to get popular cities.")
+
         db_cities_result = await conn.execute_query(get_popular_cities_cypher_query(region=region))
 
         if not db_cities_result:
+            logger.error(f"[{trace_uuid}] No cities result, existing.")
             sys.exit(1)
 
+        logger.info(f"[{trace_uuid}] Successfully got {len(db_cities_result)} popular cities.")
         return [{city["from_city_uuid"]: city["to_city_uuids"]} for city in db_cities_result]
 
 
@@ -59,6 +70,8 @@ class FlixbusTripsTracker(BaseDataTracker):
         """
         discount_threshold = self.discount_threshold
 
+        trace_uuid = str(uuid.uuid4())
+        logger.info(f"[{trace_uuid}] Looking for cheap tickets.")
         for response in processed_data:
             cheap_trips = [
                 {
@@ -81,4 +94,9 @@ class FlixbusTripsTracker(BaseDataTracker):
                 < discount_threshold * result_value["price"]["original"]
                 and result_value["available"]["seats"]
             ]
+            if not cheap_trips:
+                logger.info(f"[{trace_uuid}] No cheap tickets for now.")
+            else:
+                logger.info(f"[{trace_uuid}] Found {len(cheap_trips)} cheap tickets!")
+
             return cheap_trips

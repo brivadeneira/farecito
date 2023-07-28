@@ -14,7 +14,7 @@ from scrapers import BaseParser, BaseScraper
 from settings import APP_NAME
 
 logger = logging.getLogger(APP_NAME)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 @dataclass

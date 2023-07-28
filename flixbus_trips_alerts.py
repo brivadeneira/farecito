@@ -12,7 +12,7 @@ from scrapers.flixbus.trips_scraper import FlixbusTripsScraper
 from settings import APP_NAME
 
 logger = logging.getLogger(APP_NAME)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 async def get_flixbus_routes(region: str = "EU"):
@@ -42,7 +42,7 @@ async def get_flixbus_routes(region: str = "EU"):
                     default_days_range=90,
                 )
                 scraped_routes.append(routes)
-    logger.info("added %s routes", {len(scraped_routes)})
+    logger.info(f"Added {len(scraped_routes)} routes to scrap.")
     random.shuffle(scraped_routes)
     return scraped_routes
 
@@ -51,7 +51,7 @@ async def scrape_and_send_alerts(scraper):
     trips_tracker = FlixbusTripsTracker()
     cheap_trips = await trips_tracker.track_data_of_interest(scraper.get_data())
     if cheap_trips:
-        logging.info("%s cheap trips found!", {len(cheap_trips)})
+        logger.info("%s cheap trips found!", {len(cheap_trips)})
         for trip in cheap_trips:
             logger.info("sending alert for %s", trip)
             trips_alert_bot = TripsAlertBot(trip)
