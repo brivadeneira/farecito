@@ -19,11 +19,25 @@ including **USA**, **Brasil** and **Europe**.
 ![](https://i.ytimg.com/vi/fpGQoFZLb-4/maxresdefault.jpg)
 *["Mochilero" reference]((https://www.youtube.com/watch?v=qYc8D0fVveM))*
 
+## Features
+- Scrapes data from [flixbus.com](https://www.flixbus.com) for all [bus routes](https://www.flixbus.com/bus-routes).
+- Builds a corresponding graph in a [neo4j](https://neo4j.com/) database instance.
+- Periodically captures snapshots of prices with high discounts (50% off) for popular cities.
+- Sends cheap ticket alerts through a [Telegram channel](https://t.me/farecito_eu).
+
+### TODO
+- Add `BRA` and `USA` channels
+- Create topics/filters for receiving just cities of interest.
+
+## General structure
+
+![](https://i.imgur.com/LkORYOt.png)
+*Dotted lines indicate non implemented modules*
 
 ## Installation and usage
 
 * **python version**: 3.11
-*
+
 ```shell
 ~$ git clone https://github.com/brivadeneira/farecito.git
 ~$ conda create -n farecito python=3.11
@@ -38,8 +52,15 @@ including **USA**, **Brasil** and **Europe**.
 ```
 
 fill the env values:
-- Aura Instance's credentials: it must be downloaded when creating the instance
+- Aura Instance's credentials: it must be downloaded when creating the instance.
+  - `NEO4J_URI`
+  - `NEO4J_USERNAME`
+  - `NEO4J_PASSWORD`
+  - `AURA_INSTANCEID`
+  - `AURA_INSTANCENAME`
 - `TELEGRAM_BOT_TOKEN`: Got when creating a telegram bot, according to: https://core.telegram.org/bots/tutorial
+- `TELEGRAM_CHAT_ID`: The alert channel chat, *(the bot must be admin)*.
+
 
 ```shell
 ~$ python main.py
@@ -55,7 +76,7 @@ fill the env values:
 ```
 
 ## Doc
-
 Please, visit the [wiki](https://github.com/brivadeneira/farecito/wiki) for more details.
+
 ## License
 Farecito is licensed under the MIT License.
