@@ -30,6 +30,28 @@ class FlixbusTripsScraper(BaseScraper):
     start_date: Any = None
     end_date: Any = None
 
+    @field_validator("departure_city_uuid")
+    def validate_departure_city_uuid(cls, departure_city_uuid):
+        if not isinstance(departure_city_uuid, str):
+            raise ValueError(f"departure_city_uuid must be a str, not {type(departure_city_uuid)}")
+        return departure_city_uuid
+
+    @field_validator("arrival_city_uuid")
+    def validate_arrival_city_uuid(cls, arrival_city_uuid):
+        if not isinstance(arrival_city_uuid, str):
+            raise ValueError(f"arrival_city_uuid must be a str, not {type(arrival_city_uuid)}")
+        return arrival_city_uuid
+
+    @field_validator("default_days_range")
+    def validate_default_days_range(cls, default_days_range):
+        if not default_days_range:
+            return 90  # Three months by default
+        if not isinstance(default_days_range, str):
+            raise ValueError(f"default_days_range must be an int, not {type(default_days_range)}")
+        if default_days_range <= 0:
+            raise ValueError("default_days_range must be > 0")
+        return default_days_range
+
     @field_validator("start_date")
     def validate_start_date(cls, start_date):
         if start_date > datetime.now():
