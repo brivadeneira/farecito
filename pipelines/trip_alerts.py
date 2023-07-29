@@ -106,7 +106,7 @@ class TripsAlertBot:
             f"🚌 from {from_city_name} to {to_city_name}\n"
             f"💰 for just **{price} EUROS**!\n"
             f"📆 Schedule your next trip for {departure_date} "
-            f"({human_departure_date}) GMT+2 time zone \n"
+            f"({human_departure_date}) GMT%2B2 time zone \n"
             f"🏃 Hurry up! just **{seats_available} remaining seats**\n"
             f"➡️ {ticket_url}"
         )
@@ -119,24 +119,24 @@ class TripsAlertBot:
         """
         trace_uuid = str(uuid.uuid4())
 
-        if "ago" not in self.alert_message:
+        if "ago" in self.alert_message:
+            return
             # TODO [bug] fix this
             # for some reason tickets from the past are being caught
-            message = self.alert_message
-            bot_url = self.bot_url
-            chat_id = self.chat_id
 
-            logger.info(f"[{trace_uuid}] Trying to send a cheap ticket alert.")
+        message = self.alert_message
+        bot_url = self.bot_url
+        chat_id = self.chat_id
 
-            send_msg_url = f"sendMessage?chat_id=@{chat_id}&text={message}&parse_mode=markdown"
-            response = requests.post(f"{bot_url}/{send_msg_url}")
+        logger.info(f"[{trace_uuid}] Trying to send a cheap ticket alert.")
 
-            if response.status_code != 200:
-                logger.error(
-                    f"[{trace_uuid}] cheap ticket alert not sent! HTTP request to {bot_url} - "
-                    f"Error: {response.reason}, Status Code: {response.status_code}"
-                )
-            else:
-                logger.info(
-                    f"[{trace_uuid}] cheap ticket alert sent! - Message: {self.alert_message}"
-                )
+        send_msg_url = f"sendMessage?chat_id=@{chat_id}&text={message}&parse_mode=markdown"
+        response = requests.post(f"{bot_url}/{send_msg_url}")
+
+        if response.status_code != 200:
+            logger.error(
+                f"[{trace_uuid}] cheap ticket alert not sent! HTTP request to {bot_url} - "
+                f"Error: {response.reason}, Status Code: {response.status_code}"
+            )
+        else:
+            logger.info(f"[{trace_uuid}] cheap ticket alert sent! - Message: {self.alert_message}")

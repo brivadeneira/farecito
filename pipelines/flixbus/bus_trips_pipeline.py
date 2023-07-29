@@ -79,7 +79,7 @@ class FlixbusTripsTracker(BaseDataTracker):
                     "to_city_name": response["cities"][trip["arrival_city_id"]]["name"],
                     "departure_city_uuid": trip["departure_city_id"],
                     "arrival_city_uuid": trip["arrival_city_id"],
-                    "departure_date": trip["date"],
+                    "departure_date": result_value["departure"]["date"],
                     "uid": result_key,
                     "status": result_value["status"],
                     "provider": result_value["provider"],
