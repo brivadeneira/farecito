@@ -46,7 +46,7 @@ class FlixbusTripsScraper(BaseScraper):
     def validate_default_days_range(cls, default_days_range):
         if not default_days_range:
             return 90  # Three months by default
-        if not isinstance(default_days_range, str):
+        if not isinstance(default_days_range, int):
             raise ValueError(f"default_days_range must be an int, not {type(default_days_range)}")
         if default_days_range <= 0:
             raise ValueError("default_days_range must be > 0")
