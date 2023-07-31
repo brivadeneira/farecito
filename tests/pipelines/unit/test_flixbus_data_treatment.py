@@ -2,6 +2,7 @@
 Implements tests for Scrapers models.
 """
 import unittest
+from datetime import datetime
 
 import pytest
 
@@ -34,8 +35,18 @@ class TestTripAlertBot(unittest.TestCase):
             "https://shop.flixbus.com/search?departureCity=40d8f682-8646-11e6-9066-549f350fcb0c"
             "%26arrivalCity=40de8964-8646-11e6-9066-549f350fcb0c%26rideDate=2024-07-26",
         )
-        self.assertIsInstance(alert_bot.human_departure_date, str)
-        self.assertTrue("from now" in alert_bot.human_departure_date)
+        self.assertIsInstance(alert_bot.departure_date, str)
+        self.assertEqual(alert_bot.departure_date, "2024-07-26")
+
+        self.assertIsInstance(alert_bot.departure_date_time, datetime)
+        self.assertEqual(
+            alert_bot.departure_date_time,
+            datetime.strptime("2024-07-26T00:00:00+0200", "%Y-%m-%dT%H:%M:%S%z"),
+        )
+
+        self.assertIsInstance(alert_bot.human_departure_date_time, str)
+        self.assertEqual(alert_bot.human_departure_date_time, "Friday, July 26, 2024, 12:00 AM")
+
         message_strs = [
             "🎟 A cheap ticket for you!\n",
             "🚌 from Berlin to Paris\n",

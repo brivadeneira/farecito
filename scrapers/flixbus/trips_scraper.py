@@ -54,13 +54,13 @@ class FlixbusTripsScraper(BaseScraper):
 
     @field_validator("start_date")
     def validate_start_date(cls, start_date):
-        if start_date > datetime.now():
+        if start_date > datetime.now(pytz.timezone("Europe/Madrid")):
             raise ValueError("Start date can't be previous than today")
         return start_date
 
     @field_validator("end_date")
     def validate_end_date(cls, end_date):
-        if end_date > datetime.now():
+        if end_date > datetime.now(pytz.timezone("Europe/Madrid")):
             raise ValueError("End date can't be previous than today")
         return end_date
 
