@@ -69,6 +69,7 @@ class FlixbusTripsTracker(BaseDataTracker):
         Gets the result of get_data() method, parses it to be proceeded and stored
         """
         discount_threshold = self.discount_threshold
+        unique_cheap_trips = []
 
         trace_uuid = str(uuid.uuid4())
         logger.info(f"[{trace_uuid}] Looking for cheap tickets.")
@@ -80,11 +81,11 @@ class FlixbusTripsTracker(BaseDataTracker):
                     "departure_city_uuid": trip["departure_city_id"],
                     "arrival_city_uuid": trip["arrival_city_id"],
                     "departure_date": result_value["departure"]["date"],
-                    "uid": result_key,
-                    "status": result_value["status"],
-                    "provider": result_value["provider"],
-                    "duration_hours": result_value["duration"]["hours"],
-                    "duration_minutes": result_value["duration"]["minutes"],
+                    # "uid": result_key,
+                    # "status": result_value["status"],
+                    # "provider": result_value["provider"],
+                    # "duration_hours": result_value["duration"]["hours"],
+                    # "duration_minutes": result_value["duration"]["minutes"],
                     "price_total": result_value["price"]["total"],
                     "seats_available": result_value["available"]["seats"],
                 }
@@ -94,9 +95,14 @@ class FlixbusTripsTracker(BaseDataTracker):
                 < discount_threshold * result_value["price"]["original"]
                 and result_value["available"]["seats"]
             ]
-            if not cheap_trips:
+
+            unique_cheap_trips = list(
+                {trip["departure_date"]: trip for trip in cheap_trips}.values()
+            )
+
+            if not unique_cheap_trips:
                 logger.info(f"[{trace_uuid}] No cheap tickets for now.")
             else:
-                logger.info(f"[{trace_uuid}] Found {len(cheap_trips)} cheap tickets!")
+                logger.info(f"[{trace_uuid}] Found {len(unique_cheap_trips)} cheap tickets!")
 
-            return cheap_trips
+            return unique_cheap_trips
