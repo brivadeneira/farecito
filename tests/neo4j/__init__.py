@@ -60,7 +60,7 @@ class BusStationNodeFactory(Factory):
 def random_datetimes(cant: int = None):
     days = random.randint(0, 100)
 
-    start_date = datetime.datetime.now()
+    start_date = datetime.datetime.now(pytz.timezone("Europe/Madrid"))
     end_date = start_date + datetime.timedelta(days=days)
     start_date, end_date = pytz.utc.localize(start_date), pytz.utc.localize(end_date)
 

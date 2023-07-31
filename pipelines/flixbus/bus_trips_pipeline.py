@@ -86,10 +86,8 @@ class FlixbusTripsTracker(BaseDataTracker):
                     # "provider": result_value["provider"],
                     # "duration_hours": result_value["duration"]["hours"],
                     # "duration_minutes": result_value["duration"]["minutes"],
-                    "price_total": result_value["price"]["total"],
-                    "discount": (result_value["price"]["original"] - result_value["price"]["total"])
-                    / result_value["price"]["original"]
-                    * 100,
+                    "actual_price": result_value["price"]["total"],
+                    "original_price": result_value["price"]["original"],
                     "seats_available": result_value["available"]["seats"],
                 }
                 for trip in response["trips"]

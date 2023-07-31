@@ -125,15 +125,19 @@ class TripsAlertBot:
         :return: (str)
         """
         from_city_name, to_city_name = self.trip["from_city_name"], self.trip["to_city_name"]
-        seats_available, price = self.trip["seats_available"], self.trip["price_total"]
-        discount = f"{int(self.trip['discount'])}% OFF"
+        seats_available = self.trip["seats_available"]
+        original_price, actual_price = self.trip["original_price"], self.trip["actual_price"]
+
+        discount = ((original_price - actual_price) / original_price) * 100
+        discount = f"{int(discount)} % OFF"
+
         human_departure_date_time, ticket_url = self.human_departure_date_time, self.ticket_url
         custom_date_trip_message = self.custom_date_trip_message
 
         return (
             f"{custom_date_trip_message} a cheap ticket for you!\n"
             f"🚌 from {from_city_name} to {to_city_name}\n"
-            f"💰 for just **{price} EUROS**! ({discount})\n"
+            f"💰 for just **{actual_price} EUROS**! ({discount})\n"
             f"📆 Schedule your next trip for {human_departure_date_time} GMT%2B2 time zone \n"
             f"🏃 Hurry up! just **{seats_available} remaining seats**\n"
             f"👉 {ticket_url}"
@@ -147,7 +151,7 @@ class TripsAlertBot:
         """
         trace_uuid = str(uuid.uuid4())
 
-        if "ago" in self.alert_message:
+        if self.departure_date_time < datetime.now(pytz.timezone("Europe/Madrid")):
             return
             # TODO [bug] fix this
             # for some reason tickets from the past are being caught
