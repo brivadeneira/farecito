@@ -6,6 +6,7 @@ import os
 import uuid
 from datetime import datetime
 from typing import Any
+from urllib.parse import quote_plus
 
 import pytz
 import requests
@@ -112,11 +113,10 @@ class TripsAlertBot:
             self.trip["arrival_city_uuid"],
         )
         departure_date = self.departure_date
-        url = (
+        return (
             f"https://shop.flixbus.com/search?departureCity={departure_city_uuid}&"
             f"arrivalCity={arrival_city_uuid}&rideDate={departure_date}"
         )
-        return url.replace("&", "%26")
 
     @property
     def alert_message(self):
@@ -138,7 +138,7 @@ class TripsAlertBot:
             f"{custom_date_trip_message} a cheap ticket for you!\n"
             f"🚌 from {from_city_name} to {to_city_name}\n"
             f"💰 for just **{actual_price} EUROS**! ({discount})\n"
-            f"📆 Schedule your next trip for {human_departure_date_time} GMT%2B2 time zone \n"
+            f"📆 Schedule your next trip for {human_departure_date_time} GMT+2 time zone \n"
             f"🏃 Hurry up! just **{seats_available} remaining seats**\n"
             f"👉 {ticket_url}"
         )
@@ -156,7 +156,7 @@ class TripsAlertBot:
             # TODO [bug] fix this
             # for some reason tickets from the past are being caught
 
-        message = self.alert_message
+        message = quote_plus(self.alert_message)
         bot_url = self.bot_url
         chat_id = self.chat_id
 

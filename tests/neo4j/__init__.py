@@ -62,7 +62,6 @@ def random_datetimes(cant: int = None):
 
     start_date = datetime.datetime.now(pytz.timezone("Europe/Madrid"))
     end_date = start_date + datetime.timedelta(days=days)
-    start_date, end_date = pytz.utc.localize(start_date), pytz.utc.localize(end_date)
 
     fdt = FuzzyDateTime(start_date, end_date)
     computed_attr = cant if cant else random.randint(0, 9)

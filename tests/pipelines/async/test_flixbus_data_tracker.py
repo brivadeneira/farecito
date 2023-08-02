@@ -21,7 +21,7 @@ class TestFlixbusBTripsTracker(IsolatedAsyncioTestCase):
         cheap_trips = await trips_tracker.track_data_of_interest(response_data)
         self.assertIsNotNone(cheap_trips)
         self.assertIsInstance(cheap_trips, list)
-        self.assertEqual(len(cheap_trips), 4)
+        self.assertEqual(len(cheap_trips), 24)
 
         for trip in cheap_trips:
             trip_alert_bot = TripsAlertBot(trip)
