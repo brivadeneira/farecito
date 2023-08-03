@@ -4,6 +4,7 @@ Implements pipeline classes for flixbus.
 import logging
 import sys
 import uuid
+from itertools import groupby
 from typing import Any
 
 from pydantic.dataclasses import dataclass
@@ -62,48 +63,69 @@ class FlixbusTripsTracker(BaseDataTracker):
     (tickets with at least 50% off)
     """
 
-    discount_threshold: int = 0.5  # at least 50% off
+    discount_threshold: int = 70
+
+    def filter_cheap_trips(self, response):
+        discount_coeff = 1 - (self.discount_threshold / 100)
+
+        return [
+            {
+                "from_city_name": response["cities"][trip["departure_city_id"]]["name"],
+                "to_city_name": response["cities"][trip["arrival_city_id"]]["name"],
+                "departure_city_uuid": trip["departure_city_id"],
+                "arrival_city_uuid": trip["arrival_city_id"],
+                "departure_date": result_value["departure"]["date"],
+                "departure_just_date": result_value["departure"]["date"].split("T")[0],
+                # "uid": result_key,
+                # "status": result_value["status"],
+                # "provider": result_value["provider"],
+                # "duration_hours": result_value["duration"]["hours"],
+                # "duration_minutes": result_value["duration"]["minutes"],
+                "actual_price": result_value["price"]["total"],
+                "original_price": result_value["price"]["original"],
+                "seats_available": result_value["available"]["seats"],
+            }
+            for trip in response["trips"]
+            for result_key, result_value in trip["results"].items()
+            if result_value["price"]["total"] <= discount_coeff * result_value["price"]["original"]
+            and result_value["available"]["seats"]
+        ]
+
+    def grouped_trips(self, cheap_trips):
+        def composite_key(item):
+            return item["from_city_name"], item["to_city_name"], item["departure_just_date"]
+
+        sorted_data = sorted(cheap_trips, key=composite_key)
+        return {k: list(v) for k, v in groupby(sorted_data, key=composite_key)}
+
+    def curated_trips(self, grouped_trips):
+        curated_trips = []
+
+        for _, values in grouped_trips.items():
+            cheapest_trip = min(values, key=lambda x: x["actual_price"])
+            curated_trips.append(cheapest_trip)
+
+        return curated_trips
 
     async def track_data_of_interest(self, processed_data: dict[str, Any]):
         """
         Gets the result of get_data() method, parses it to be proceeded and stored
         """
-        discount_threshold = self.discount_threshold
-        unique_cheap_trips = []
-
         trace_uuid = str(uuid.uuid4())
         logger.info(f"[{trace_uuid}] Looking for cheap tickets.")
+
+        all_cheap_trips = []
         for response in processed_data:
-            cheap_trips = [
-                {
-                    "from_city_name": response["cities"][trip["departure_city_id"]]["name"],
-                    "to_city_name": response["cities"][trip["arrival_city_id"]]["name"],
-                    "departure_city_uuid": trip["departure_city_id"],
-                    "arrival_city_uuid": trip["arrival_city_id"],
-                    "departure_date": result_value["departure"]["date"],
-                    # "uid": result_key,
-                    # "status": result_value["status"],
-                    # "provider": result_value["provider"],
-                    # "duration_hours": result_value["duration"]["hours"],
-                    # "duration_minutes": result_value["duration"]["minutes"],
-                    "actual_price": result_value["price"]["total"],
-                    "original_price": result_value["price"]["original"],
-                    "seats_available": result_value["available"]["seats"],
-                }
-                for trip in response["trips"]
-                for result_key, result_value in trip["results"].items()
-                if result_value["price"]["total"]
-                < discount_threshold * result_value["price"]["original"]
-                and result_value["available"]["seats"]
-            ]
+            cheap_trips_by_resp = self.filter_cheap_trips(response)
+            all_cheap_trips.extend(cheap_trips_by_resp)
 
-            unique_cheap_trips = list(
-                {trip["departure_date"]: trip for trip in cheap_trips}.values()
-            )
+        # TODO [missing tests]
+        grouped_trips = self.grouped_trips(all_cheap_trips)
+        curated_cheap_trips = self.curated_trips(grouped_trips)
 
-            if not unique_cheap_trips:
-                logger.info(f"[{trace_uuid}] No cheap tickets for now.")
-            else:
-                logger.info(f"[{trace_uuid}] Found {len(unique_cheap_trips)} cheap tickets!")
+        if not curated_cheap_trips:
+            logger.info(f"[{trace_uuid}] No cheap tickets for now.")
+        else:
+            logger.info(f"[{trace_uuid}] Found {len(curated_cheap_trips)} cheap tickets!")
 
-            return unique_cheap_trips
+        return curated_cheap_trips

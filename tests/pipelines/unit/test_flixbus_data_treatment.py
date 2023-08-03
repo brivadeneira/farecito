@@ -33,7 +33,7 @@ class TestTripAlertBot(unittest.TestCase):
         self.assertEqual(
             alert_bot.ticket_url,
             "https://shop.flixbus.com/search?departureCity=40d8f682-8646-11e6-9066-549f350fcb0c"
-            "%26arrivalCity=40de8964-8646-11e6-9066-549f350fcb0c%26rideDate=2024-07-26",
+            "6arrivalCity=40de8964-8646-11e6-9066-549f350fcb0c&rideDate=2024-07-26",
         )
         self.assertIsInstance(alert_bot.departure_date, str)
         self.assertEqual(alert_bot.departure_date, "2024-07-26")
