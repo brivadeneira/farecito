@@ -74,7 +74,7 @@ class TripsAlertBot:
         Format the datetime info in a friendly one, '%A, %B %d, %Y, %I:%M %p' str format
         :return: (str), e.g. "2023-07-31T19:00" will be "Sunday, July 31, 2023, 07:00 PM"
         """
-        return f"{self.departure_date_time.strftime('%A, %B %d, %Y, %I:%M %p')}"
+        return f"{self.departure_date_time.strftime('%A, #%B %d, %Y, %I:%M %p')}"
 
     @property
     def custom_date_trip_message(self):
@@ -136,7 +136,7 @@ class TripsAlertBot:
 
         return (
             f"{custom_date_trip_message} a cheap ticket for you!\n"
-            f"🚌 from {from_city_name} to {to_city_name}\n"
+            f"🚌 from #{from_city_name} to #{to_city_name}\n"
             f"💰 for just **{actual_price} EUROS**! ({discount})\n"
             f"📆 Schedule your next trip for {human_departure_date_time} GMT+2 time zone \n"
             f"🏃 Hurry up! just **{seats_available} remaining seats**\n"
