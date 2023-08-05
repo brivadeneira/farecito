@@ -14,6 +14,7 @@ import requests
 from dotenv import load_dotenv
 from pydantic.dataclasses import dataclass
 
+from pipelines.settings import SENT_TRIPS_FILE
 from settings import APP_NAME
 
 load_dotenv()
@@ -40,7 +41,7 @@ class TripsAlertBot:
     def __post_init__(self):
         self.trace_uuid = str(uuid.uuid4())
 
-        self.sent_trips_file_path = "flixbus_sent_trips.json"
+        self.sent_trips_file_path = SENT_TRIPS_FILE
 
         trip = self.trip
         trip_properties = [

@@ -10,6 +10,7 @@ import pytz
 from pydantic.dataclasses import dataclass
 from pydantic.functional_validators import field_validator
 
+from pipelines.settings import SCRAP_DAYS
 from scrapers import BaseScraper
 
 
@@ -45,7 +46,7 @@ class FlixbusTripsScraper(BaseScraper):
     @field_validator("default_days_range")
     def validate_default_days_range(cls, default_days_range):
         if not default_days_range:
-            return 90  # Three months by default
+            return SCRAP_DAYS
         if not isinstance(default_days_range, int):
             raise ValueError(f"default_days_range must be an int, not {type(default_days_range)}")
         if default_days_range <= 0:
