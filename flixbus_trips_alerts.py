@@ -65,8 +65,6 @@ async def get_flixbus_trips(region: str = "EU"):
     tracks and identifies cheap trips using FlixbusTripsTracker,
     and sends alerts for the found cheap trips
     using TripsAlertBot.
-
-    :param scraper: A FlixbusTripsScraper instance used for data scraping.
     """
     scraped_routes = await get_flixbus_routes(region)
 

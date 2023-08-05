@@ -1,6 +1,7 @@
 """
 Telegram ticket alerts
 """
+import json
 import logging
 import os
 import uuid
@@ -37,24 +38,82 @@ class TripsAlertBot:
     bot_url: str = None
 
     def __post_init__(self):
+        self.trace_uuid = str(uuid.uuid4())
+
+        self.sent_trips_file_path = "flixbus_sent_trips.json"
+
         trip = self.trip
         trip_properties = [
+            "uuid",
             "from_city_name",
             "departure_city_uuid",
             "to_city_name",
             "arrival_city_uuid",
-            "price",
-            "discount",
+            "actual_price",
             "departure_date",
             "seats_available",
         ]
-        if not any(trip.get(k) for k in trip_properties):
-            raise ValueError(f"{', '.join(trip_properties)} trip properties are mandatory.")
+        try:
+            _ = [trip[k] for k in trip_properties]
+        except KeyError as exc:
+            raise ValueError(f"{', '.join(trip_properties)} trip properties are mandatory") from exc
 
         if not self.bot_url:
             self.bot_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}"
 
         self.chat_id = TELEGRAM_CHAT_ID
+        self.sent_alerts_path = "sent_trips.json"
+
+        self.check_trip()
+
+    def check_trip(self):
+        trip_uuid = self.trip["uuid"]
+        from_city, to_city = self.trip["from_city_name"], self.trip["to_city_name"]
+        date, price = self.trip["departure_date"], self.trip["actual_price"]
+
+        if self.trip_already_sent(trip_uuid):
+            logger.info(
+                f"[{self.trace_uuid}] Trip with uuid {trip_uuid}: "
+                f"{from_city}->{to_city} at {date} for {price} already sent."
+            )
+
+    def read_sent_trips_from_json(self):
+        file_path = self.sent_trips_file_path
+
+        try:
+            with open(file_path, "r", encoding="utf-8") as file:
+                try:
+                    data = json.load(file)
+                except json.decoder.JSONDecodeError:
+                    data = {}
+        except FileNotFoundError:
+            data = {}
+            with open(file_path, "w", encoding="utf-8") as file:
+                json.dump(data, file)
+
+        return data
+
+    def write_sent_trip_data_to_json(self):
+        file_path = self.sent_trips_file_path
+        trip_to_save = {self.trip["uuid"]: self.trip}
+
+        try:
+            with open(file_path, "r", encoding="utf-8") as file:
+                try:
+                    data = json.load(file)
+                except json.decoder.JSONDecodeError:
+                    data = {}
+        except FileNotFoundError:
+            data = {}
+
+        data.update(trip_to_save)
+
+        with open(file_path, "w", encoding="utf-8") as file:
+            json.dump(data, file, indent=4)
+
+    def trip_already_sent(self, trip_uuid: str) -> bool:
+        data = self.read_sent_trips_from_json()
+        return trip_uuid in data
 
     @property
     def departure_date_time(self):
@@ -99,7 +158,7 @@ class TripsAlertBot:
             case _ if current_month == datetime.today().month:
                 return "🔜 Soon"
             case _:
-                return f"🎒 In {departure_date_time.strftime('%B')}"
+                return f"🎒 In {departure_date_time.strftime('#%B')}"
 
     @property
     def ticket_url(self):
@@ -149,9 +208,8 @@ class TripsAlertBot:
         accordinf to https://core.telegram.org/method/messages.sendMessage
         :return: (None)
         """
-        trace_uuid = str(uuid.uuid4())
 
-        if self.departure_date_time < datetime.now(pytz.timezone("Europe/Madrid")):
+        if self.departure_date_time <= datetime.now(pytz.timezone("Europe/Madrid")):
             return
             # TODO [bug] fix this
             # for some reason tickets from the past are being caught
@@ -160,15 +218,32 @@ class TripsAlertBot:
         bot_url = self.bot_url
         chat_id = self.chat_id
 
-        logger.info(f"[{trace_uuid}] Trying to send a cheap ticket alert.")
+        logger.info(f"[{self.trace_uuid}] Trying to send a cheap ticket alert.")
 
         send_msg_url = f"sendMessage?chat_id=@{chat_id}&text={message}&parse_mode=markdown"
         response = requests.post(f"{bot_url}/{send_msg_url}")
 
         if response.status_code != 200:
             logger.error(
-                f"[{trace_uuid}] cheap ticket alert not sent! HTTP request to {bot_url} - "
+                f"[{self.trace_uuid}] cheap ticket alert not sent! HTTP request to {bot_url} - "
                 f"Error: {response.reason}, Status Code: {response.status_code}"
             )
         else:
-            logger.info(f"[{trace_uuid}] cheap ticket alert sent! - Message: {self.alert_message}")
+            try:
+                self.write_sent_trip_data_to_json()
+                trip_uuid = self.trip["uuid"]
+                from_city, to_city = self.trip["from_city_name"], self.trip["to_city_name"]
+                date, price = self.trip["departure_date"], self.trip["actual_price"]
+                logger.info(
+                    f"[{self.trace_uuid}] Trip with uuid {trip_uuid}: "
+                    f"{from_city}->{to_city} at {date} for {price} saved."
+                )
+            except Exception as exc:
+                logger.error(
+                    f"[{self.trace_uuid}] Trip with uuid {trip_uuid}: "
+                    f"{from_city}->{to_city} at {date} for {price} can not be saved: {exc}."
+                )
+
+            logger.info(
+                f"[{self.trace_uuid}] cheap ticket alert sent! - Message: {self.alert_message}"
+            )
