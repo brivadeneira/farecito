@@ -7,6 +7,7 @@ import logging
 import random
 
 from pipelines.flixbus.bus_trips_pipeline import FlixbusCitiesDataGetter, FlixbusTripsTracker
+from pipelines.settings import SCRAP_DAYS
 from pipelines.trip_alerts import TripsAlertBot
 from scrapers.flixbus.trips_scraper import FlixbusTripsScraper
 from settings import APP_NAME
@@ -39,7 +40,7 @@ async def get_flixbus_routes(region: str = "EU"):
                 routes = FlixbusTripsScraper(
                     departure_city_uuid=departure_city,
                     arrival_city_uuid=arrival_city,
-                    default_days_range=90,
+                    default_days_range=int(SCRAP_DAYS),
                 )
                 scraped_routes.append(routes)
     logger.info(f"Added {len(scraped_routes)} routes to scrap.")
