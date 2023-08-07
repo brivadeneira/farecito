@@ -141,6 +141,10 @@ class BaseScraper:
                 continue
             except SSLError:
                 response = session.get(url, verify=False)
+            except requests.exceptions.HTTPError:
+                logger.error(f"[{trace_uuid}] an exception appeared: {ex}")
+                time.sleep(60)
+                continue
 
             if response.status_code != 200:
                 logger.error(

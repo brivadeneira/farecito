@@ -65,29 +65,13 @@ class TripsAlertBot:
         self.chat_id = TELEGRAM_CHAT_ID
         self.sent_alerts_path = "sent_trips.json"
 
-        self.check_trip()
-
-    def check_trip(self):
-        trip_uuid = self.trip["uuid"]
-        from_city, to_city = self.trip["from_city_name"], self.trip["to_city_name"]
-        date, price = self.trip["departure_date"], self.trip["actual_price"]
-
-        if self.trip_already_sent(trip_uuid):
-            logger.info(
-                f"[{self.trace_uuid}] Trip with uuid {trip_uuid}: "
-                f"{from_city}->{to_city} at {date} for {price} already sent."
-            )
-
     def read_sent_trips_from_json(self):
         file_path = self.sent_trips_file_path
 
         try:
             with open(file_path, "r", encoding="utf-8") as file:
-                try:
-                    data = json.load(file)
-                except json.decoder.JSONDecodeError:
-                    data = {}
-        except FileNotFoundError:
+                data = json.load(file)
+        except (FileNotFoundError, json.decoder.JSONDecodeError):
             data = {}
             with open(file_path, "w", encoding="utf-8") as file:
                 json.dump(data, file)
@@ -100,11 +84,8 @@ class TripsAlertBot:
 
         try:
             with open(file_path, "r", encoding="utf-8") as file:
-                try:
-                    data = json.load(file)
-                except json.decoder.JSONDecodeError:
-                    data = {}
-        except FileNotFoundError:
+                data = json.load(file)
+        except (FileNotFoundError, json.decoder.JSONDecodeError):
             data = {}
 
         data.update(trip_to_save)
@@ -210,7 +191,23 @@ class TripsAlertBot:
         :return: (None)
         """
 
+        trip_uuid = self.trip["uuid"]
+        from_city, to_city = self.trip["from_city_name"], self.trip["to_city_name"]
+        date, price = self.trip["departure_date"], self.trip["actual_price"]
+
+        if self.trip_already_sent(trip_uuid):
+            logger.info(
+                f"[{self.trace_uuid}] Trip with uuid {trip_uuid}: "
+                f"{from_city}->{to_city} at {date} for {price} already sent."
+            )
+
+            return
+
         if self.departure_date_time <= datetime.now(pytz.timezone("Europe/Madrid")):
+            logger.error(
+                f"[{self.trace_uuid}] Trip with uuid {trip_uuid}: "
+                f"{from_city}->{to_city} at {date} for {price} is in the past."
+            )
             return
             # TODO [bug] fix this
             # for some reason tickets from the past are being caught
@@ -232,9 +229,6 @@ class TripsAlertBot:
         else:
             try:
                 self.write_sent_trip_data_to_json()
-                trip_uuid = self.trip["uuid"]
-                from_city, to_city = self.trip["from_city_name"], self.trip["to_city_name"]
-                date, price = self.trip["departure_date"], self.trip["actual_price"]
                 logger.info(
                     f"[{self.trace_uuid}] Trip with uuid {trip_uuid}: "
                     f"{from_city}->{to_city} at {date} for {price} saved."

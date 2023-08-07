@@ -11,7 +11,7 @@ from pydantic.dataclasses import dataclass
 
 from neo4j_graph import Neo4JConn, get_popular_cities_cypher_query
 from pipelines import BaseDataGetter, BaseDataTracker
-from pipelines.settings import NEO4J_PASSWORD, NEO4J_URI, NEO4J_USERNAME
+from pipelines.settings import NEO4J_PASSWORD, NEO4J_URI, NEO4J_USERNAME, TRIP_MIN_DISCOUNT
 from settings import APP_NAME
 
 logger = logging.getLogger(APP_NAME)
@@ -63,7 +63,7 @@ class FlixbusTripsTracker(BaseDataTracker):
     (tickets with at least 50% off)
     """
 
-    discount_threshold: int = 70
+    discount_threshold: int = int(TRIP_MIN_DISCOUNT)
 
     def filter_cheap_trips(self, response):
         discount_coeff = 1 - (self.discount_threshold / 100)
