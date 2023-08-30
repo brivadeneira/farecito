@@ -155,30 +155,32 @@ class FlixbusBusStationsDataLoader(BaseDataLoader):
         else:
             new_nodes = data
 
-        new_nodes_chunks = [
-            new_nodes[i : i + chunk_size] for i in range(0, len(new_nodes), chunk_size)
-        ]
+        if new_nodes:
+            new_nodes_chunks = [
+                new_nodes[i : i + chunk_size] for i in range(0, len(new_nodes), chunk_size)
+            ]
 
-        for chunk in new_nodes_chunks:
-            # TODO [improvement] add resilient block here in case something wrong with an item
-            nodes = [BusStationNode(**item) for item in chunk]
-            graph = UnstructuredGraph(nodes)
-            create_node_queries.append(graph.create_nodes_query)
+            for chunk in new_nodes_chunks:
+                # TODO [improvement] add resilient block here in case something wrong with an item
+                nodes = [BusStationNode(**item) for item in chunk]
+                graph = UnstructuredGraph(nodes)
+                create_node_queries.append(graph.create_nodes_query)
 
-            relationship = NodeRelationShip(src_node_ids=[item["id"] for item in chunk])
-            multi_node_relationship_queries.append(
-                relationship.create_multiple_node_relationships()
+                relationship = NodeRelationShip(src_node_ids=[item["id"] for item in chunk])
+                multi_node_relationship_queries.append(
+                    relationship.create_multiple_node_relationships()
+                )
+
+            trace_uuid = str(uuid.uuid4())
+            logger.info(f"[{trace_uuid}] Trying to load {len(new_nodes)} new nodes.")
+            # TODO [improvement] propagate log trace uuid
+
+            await asyncio.gather(*[conn.execute_query(query) for query in create_node_queries])
+            await asyncio.gather(
+                *[conn.execute_query(query) for query in multi_node_relationship_queries]
             )
 
-        trace_uuid = str(uuid.uuid4())
-        logger.info(f"[{trace_uuid}] Trying to load {len(new_nodes)} new nodes.")
-        # TODO [improvement] propagate log trace uuid
-
-        await asyncio.gather(*[conn.execute_query(query) for query in create_node_queries])
-        await asyncio.gather(
-            *[conn.execute_query(query) for query in multi_node_relationship_queries]
-        )
-
-        await asyncio.gather(
-            *[conn.execute_query(query) for query in single_node_relationship_queries]
-        )
+        if single_node_relationship_queries:
+            await asyncio.gather(
+                *[conn.execute_query(query) for query in single_node_relationship_queries]
+            )

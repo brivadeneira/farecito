@@ -3,6 +3,7 @@ Implements flixbus bus trips web scraping.
 
 This module contains a class for scraping and parsing Flixbus trips.
 """
+import random
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -65,6 +66,7 @@ class FlixbusTripsScraper(BaseScraper):
         )
 
         departure_dates = self.dates_range_generator()
+        random.shuffle(departure_dates)
         departure_city = self.departure_city_uuid
         arrival_city = self.arrival_city_uuid
 

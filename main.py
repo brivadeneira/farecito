@@ -6,7 +6,9 @@ import logging
 
 import nest_asyncio
 
+from flixbus_stations_loader import load_flixbus_cities
 from flixbus_trips_alerts import get_flixbus_trips
+from pipelines.settings import REGION
 
 nest_asyncio.apply()
 # patches asyncio to allow nested use of asyncio.run
@@ -19,6 +21,5 @@ logging.basicConfig(
 )
 
 if __name__ == "__main__":
-    # region = "EU"  # TODO [improvement] read region from env
-    # asyncio.run(load_flixbus_cities(region=region))  # TODO [bug] FIX THIS!
+    asyncio.run(load_flixbus_cities(region=REGION))
     asyncio.run(get_flixbus_trips())

@@ -503,7 +503,7 @@ class Neo4JConn:
                 data = await result.data()
                 if data:
                     logger.debug(
-                        f"[{trace_uuid}] Successfully executed DB query and retrieved  {len(data)} result(s)"
+                        f"[{trace_uuid}] Successfully executed DB query and retrieved {len(data)} result(s)"
                     )
                 else:
                     logger.debug(f"[{trace_uuid}] Successfully executed DB query with no result(s)")

@@ -4,6 +4,7 @@ Telegram ticket alerts
 import json
 import logging
 import os
+import time
 import uuid
 from datetime import datetime
 from typing import Any
@@ -200,7 +201,6 @@ class TripsAlertBot:
                 f"[{self.trace_uuid}] Trip with uuid {trip_uuid}: "
                 f"{from_city}->{to_city} at {date} for {price} already sent."
             )
-
             return
 
         if self.departure_date_time <= datetime.now(pytz.timezone("Europe/Madrid")):
@@ -223,8 +223,12 @@ class TripsAlertBot:
 
         if response.status_code != 200:
             logger.error(
-                f"[{self.trace_uuid}] cheap ticket alert not sent! HTTP request to {bot_url} - "
-                f"Error: {response.reason}, Status Code: {response.status_code}"
+                f"[{self.trace_uuid}] Error: {response.reason}, Status Code: {response.status_code}"
+            )
+            logger.error(
+                f"[{self.trace_uuid}] Trip with uuid {trip_uuid}: "
+                f"{from_city}->{to_city} at {date} for {price} "
+                f"can not be alerted: {response.reason}."
             )
         else:
             try:
@@ -238,7 +242,5 @@ class TripsAlertBot:
                     f"[{self.trace_uuid}] Trip with uuid {trip_uuid}: "
                     f"{from_city}->{to_city} at {date} for {price} can not be saved: {exc}."
                 )
-
-            logger.info(
-                f"[{self.trace_uuid}] cheap ticket alert sent! - Message: {self.alert_message}"
-            )
+            # TODO [improvement] path for not sending a lot of alerts at once
+            time.sleep(15)

@@ -5,6 +5,8 @@ from typing import Iterable
 
 from pydantic.utils import to_camel
 
+from neo4j_graph.settings import POPULAR_DST, POPULAR_SRC
+
 
 def date_time_to_cypher_conversion(date_time_object: datetime.datetime | datetime.timedelta) -> str:
     """
@@ -89,20 +91,25 @@ def snake_to_upper_camel(snake_str: str) -> str:
 
 
 # TODO [refactor] move next func to a more accurate place
-def get_popular_cities_cypher_query(region: str = "EU") -> str:
+def get_cities_cypher_query(region: str = "EU") -> str:
     """
-    Query for look for all city_uuid popular cities,
+    Query for look for all city_uuid for a set of cities,
     and its reachable cities uuids,
     useful for popular trips discounts scraper
-    :return: The cypher query ready to run.
+
+    :param region: (str) The region to filter nodes by. Default is 'EU' (Europe).
+    :return: (str) The cypher query ready to run.
     """
+
+    popular_src_substring = "AND n.IsPopular" if POPULAR_SRC else ""
+    popular_dst_substring = "AND m.IsPopular" if POPULAR_DST else ""
 
     return f"""
     MATCH (n:BusStation)
-    WHERE n.Region='{region}' AND n.IsPopular
+    WHERE n.Region='{region}' {popular_src_substring}
     WITH n.CityUuid AS from_city_uuid, n.ReachableIds AS reachableIds
     MATCH (m:BusStation)
-    WHERE m.CityUuid <> from_city_uuid AND m.IsPopular AND m.Id IN reachableIds
+    WHERE m.CityUuid <> from_city_uuid {popular_dst_substring} AND m.Id IN reachableIds
     RETURN from_city_uuid, COLLECT(DISTINCT m.CityUuid) AS to_city_uuids
     """.strip()
 

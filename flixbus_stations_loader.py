@@ -44,7 +44,7 @@ async def load_flixbus_cities(region: str = "EU"):
     scraped_stations = flixbus_stations_scraper.get_data(method="POST")
 
     if scraped_stations:
-        logger.info(f"[{trace_uuid}] Successfully scraped {len(scraped_stations)}.")
+        logger.info(f"[{trace_uuid}] Successfully scraped {scraped_stations[0]['hits']['total']}.")
         flixbus_stations_parser = FlixbusBusStationsParser(
             region=region, scraped_data=scraped_stations
         )
@@ -58,4 +58,4 @@ async def load_flixbus_cities(region: str = "EU"):
         )
         await flixbus_stations_loader.load_items()
     else:
-        logger.error(f"[{trace_uuid}] No bus station scraped.")
+        logger.error(f"[{trace_uuid}] No new bus stations scraped.")

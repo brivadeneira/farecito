@@ -4,6 +4,7 @@ Scrap, proccess and alert for flixbus cheap trips
 import asyncio
 import concurrent
 import logging
+import random
 
 from pipelines.flixbus.bus_trips_pipeline import FlixbusCitiesDataGetter, FlixbusTripsTracker
 from pipelines.trip_alerts import TripsAlertBot
@@ -28,12 +29,12 @@ async def get_flixbus_routes(region: str = "EU"):
     :return: A list of FlixbusTripsScraper instances representing the scraped routes.
     """
     cities_getter = FlixbusCitiesDataGetter(region=region)
-    popular_routes = await cities_getter.get_stored_data()
+    routes_to_search = await cities_getter.get_stored_data()
 
     scraped_routes = []
 
-    for popular_route in popular_routes:
-        for departure_city, arrival_cities in popular_route.items():
+    for route in routes_to_search:
+        for departure_city, arrival_cities in route.items():
             for arrival_city in arrival_cities:
                 routes = FlixbusTripsScraper(
                     departure_city_uuid=departure_city,
@@ -41,7 +42,7 @@ async def get_flixbus_routes(region: str = "EU"):
                 )
                 scraped_routes.append(routes)
     logger.info(f"Added {len(scraped_routes)} routes to scrap.")
-    # random.shuffle(scraped_routes)
+    random.shuffle(scraped_routes)
     return scraped_routes
 
 
