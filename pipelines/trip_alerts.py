@@ -16,6 +16,7 @@ from dotenv import load_dotenv
 from pydantic.dataclasses import dataclass
 
 from pipelines.settings import SENT_TRIPS_FILE
+from pipelines.utils import city_to_country_code_and_flag
 from settings import APP_NAME
 
 load_dotenv()
@@ -51,6 +52,7 @@ class TripsAlertBot:
             "departure_city_uuid",
             "to_city_name",
             "arrival_city_uuid",
+            "original_price",
             "actual_price",
             "departure_date",
             "seats_available",
@@ -111,7 +113,7 @@ class TripsAlertBot:
         return self.departure_date_time.strftime("%Y-%m-%d")
 
     @property
-    def human_departure_date_time(self):
+    def human_departure_date_time(self) -> str:
         """
         Format the datetime info in a friendly one, '%A, %B %d, %Y, %I:%M %p' str format
         :return: (str), e.g. "2023-07-31T19:00" will be "Sunday, July 31, 2023, 07:00 PM"
@@ -119,7 +121,7 @@ class TripsAlertBot:
         return f"{self.departure_date_time.strftime('%A, #%B %d, %Y, %I:%M %p')}"
 
     @property
-    def custom_date_trip_message(self):
+    def custom_date_trip_message(self) -> str:
         """
         Gen a custom emoji + word according to the distance
         from now to the cheap trip datetime as follows:
@@ -144,6 +146,41 @@ class TripsAlertBot:
                 return f"🎒 In {departure_date_time.strftime('#%B')}"
 
     @property
+    def route_country_code_and_flag(self) -> str:
+        """
+        Gen a custom emoji of the country's flag according to the src/dst
+        """
+        from_city_name, to_city_name = self.trip["from_city_name"], self.trip["to_city_name"]
+        src_cc_flag, dst_cc_flag = city_to_country_code_and_flag(
+            from_city_name
+        ), city_to_country_code_and_flag(to_city_name)
+
+        if src_cc_flag == dst_cc_flag:
+            cc_flag = src_cc_flag
+            return f"from #{from_city_name} to #{to_city_name} #{cc_flag}\n"
+
+        return f"from #{from_city_name} #{src_cc_flag} to #{to_city_name} #{dst_cc_flag}\n"
+
+    def custom_discount_trip_message(self, discount):
+        """
+        Gen a custom emoji + word according to the % of discount
+        from now to the cheap trip as follows:
+        50: #up50%
+        50-70: #+50%
+        +70: #+70%
+        next months: month's name
+        :return:
+        """
+
+        match discount:
+            case _ if discount <= 50:
+                return "#UPto50% OFF🎫"
+            case _ if discount <= 70:
+                return "#UPto70% OFF🔻"
+            case _:
+                return "#over70% OFF🔥"
+
+    @property
     def ticket_url(self):
         """
         Build the link of shop search flixbus trips
@@ -163,23 +200,23 @@ class TripsAlertBot:
     @property
     def alert_message(self):
         """
-        Builds a friendly message alertinf about a cheap trip
+        Builds a friendly message alert about a cheap trip
         :return: (str)
         """
-        from_city_name, to_city_name = self.trip["from_city_name"], self.trip["to_city_name"]
         seats_available = self.trip["seats_available"]
-        original_price, actual_price = self.trip["original_price"], self.trip["actual_price"]
 
+        original_price, actual_price = self.trip["original_price"], self.trip["actual_price"]
         discount = ((original_price - actual_price) / original_price) * 100
-        discount = f"{int(discount)} % OFF"
 
         human_departure_date_time, ticket_url = self.human_departure_date_time, self.ticket_url
-        custom_date_trip_message = self.custom_date_trip_message
+        custom_date_message = self.custom_date_trip_message
+        route_country_code_and_flag = self.route_country_code_and_flag
+        custom_discount_message = self.custom_discount_trip_message(discount)
 
         return (
-            f"{custom_date_trip_message} a cheap ticket for you!\n"
-            f"🚌 from #{from_city_name} to #{to_city_name}\n"
-            f"💰 for just **{actual_price} EUROS**! ({discount})\n"
+            f"{custom_date_message} a cheap ticket for you!\n"
+            f"🚌 {route_country_code_and_flag}\n"
+            f"💰 for just **{actual_price} EUROS**! ({custom_discount_message})\n"
             f"📆 Schedule your next trip for {human_departure_date_time} GMT+2 time zone \n"
             f"🏃 Hurry up! just **{seats_available} remaining seats**\n"
             f"👉 {ticket_url}"
